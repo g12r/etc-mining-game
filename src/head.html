@@ -1,0 +1,141 @@
+<title>Untitled Emmett Game</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: the game fills a big 16:9 window; controls and mine safety notes sit underneath. Single dark look by design. */
+:root{
+  --night:#0f0d0b; --panel:#1d1915; --panel-2:#2a241d; --line:#463a2c;
+  --lamp:#f2b33d; --gold:#ffd25e; --fg:#f1e8da; --muted:#b0a089; --ok:#8fd16a; --warn:#ff8f73; --water:#5fb2ea; --air:#cfe9ff; --heat:#ff7a45;
+  --display:"Rye", Georgia, serif;
+  --body:"Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --label:"Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme:dark;
+}
+html{background:var(--night)}
+[hidden]{display:none!important}
+body{background:var(--night);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 56px}
+.eyebrow{font-family:var(--label);letter-spacing:.14em;text-transform:uppercase;color:var(--lamp);font-size:.85rem;font-weight:600}
+header{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+header h1{font-family:var(--display);font-weight:400;font-size:clamp(1.9rem,4.4vw,3rem);color:var(--gold);margin:.15rem 0 0;line-height:1.05;text-shadow:0 2px 0 #000}
+header p{color:var(--muted);margin:.4rem 0 0;max-width:62ch}
+button{font-family:var(--label);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.95rem;border-radius:6px;cursor:pointer;padding:7px 14px}
+button:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.btn{background:var(--lamp);color:#1a120a;border:0;box-shadow:0 3px 0 #8a5c12}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a5c12}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+
+.stage{position:relative;aspect-ratio:16/9;max-width:100%;margin-top:16px;border-radius:10px;overflow:hidden;background:#000;border:1px solid var(--line);user-select:none;-webkit-user-select:none}
+.stage:fullscreen{border-radius:0;border:0;aspect-ratio:auto;width:100vw;height:100vh}
+.stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;inset:0;pointer-events:none;font-family:var(--label);font-weight:600;letter-spacing:.03em}
+.cross{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%)}
+.cross::before,.cross::after{content:"";position:absolute;background:rgba(255,255,255,.8);box-shadow:0 0 2px #000}
+.cross::before{left:8px;top:2px;width:2px;height:14px}.cross::after{top:8px;left:2px;height:2px;width:14px}
+.ring{position:absolute;left:50%;top:50%;width:38px;height:38px;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(var(--gold) var(--p,0%),rgba(255,255,255,.18) 0);-webkit-mask:radial-gradient(circle,transparent 13px,#000 14px);mask:radial-gradient(circle,transparent 13px,#000 14px)}
+.tl,.tr{position:absolute;top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.tl{left:10px}.tr{right:10px;justify-content:flex-end}
+.chip{background:rgba(12,10,8,.78);border:1px solid var(--line);border-radius:999px;padding:2px 11px;font-size:1rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip b{color:var(--fg);font-weight:700;margin-left:4px}
+.chip.money b{color:var(--ok)}
+.chip.bird b{color:var(--gold)} .chip.bird.bad{border-color:var(--warn);color:var(--warn)} .chip.bird.bad b{color:var(--warn)}
+.bars{position:absolute;left:10px;bottom:12px;display:flex;flex-direction:column;gap:5px;width:min(220px,30%)}
+.bar{display:grid;grid-template-columns:52px 1fr;gap:6px;align-items:center;font-size:.9rem;color:var(--fg);text-shadow:0 1px 2px #000}
+.bar i{display:block;height:10px;border-radius:5px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);overflow:hidden;position:relative}
+.bar i::after{content:"";position:absolute;inset:0;width:var(--v,100%);background:var(--c)}
+.hotbar{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:4px;pointer-events:auto;max-width:62%;flex-wrap:wrap;justify-content:center}
+.slot{min-width:58px;background:rgba(12,10,8,.82);border:2px solid var(--line);border-radius:7px;color:var(--fg);padding:2px 6px;font-family:var(--label);font-weight:600;font-size:.82rem;text-transform:none;letter-spacing:.02em;line-height:1.15;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.slot .k{font-size:.68rem;color:var(--muted)} .slot .n{color:var(--gold);font-variant-numeric:tabular-nums}
+.slot[aria-pressed="true"]{border-color:var(--lamp);background:rgba(70,48,18,.92)}
+.toast{position:absolute;left:50%;top:48px;transform:translateX(-50%);background:rgba(12,10,8,.92);border:1px solid var(--lamp);border-radius:6px;padding:6px 14px;max-width:min(92%,640px);text-align:center;color:var(--fg)}
+.toast.warn{border-color:var(--warn)}
+.prompt{position:absolute;left:50%;top:calc(50% + 28px);transform:translateX(-50%);background:rgba(12,10,8,.88);border:1px solid var(--lamp);border-radius:6px;padding:3px 12px;white-space:nowrap}
+.prompt kbd{background:var(--lamp);color:#1a120a;border-radius:3px;padding:0 6px;margin-right:6px;font-family:var(--label)}
+.vignette{position:absolute;inset:0;pointer-events:none;transition:box-shadow .3s}
+.overlay{position:absolute;inset:0;background:rgba(8,6,4,.82);display:flex;align-items:center;justify-content:center;padding:14px;z-index:5}
+.card{background:var(--panel-2);border:2px solid var(--lamp);border-radius:10px;padding:16px 20px;width:min(600px,96%);max-height:96%;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.card h2{font-family:var(--display);font-weight:400;font-size:1.7rem;margin:0;color:var(--gold);line-height:1.1}
+.card .sub{color:var(--muted);margin:4px 0 10px}
+.card h4{font-family:var(--label);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:.82rem;color:var(--lamp);margin:12px 0 0}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.row .nm{font-weight:600}.row .ds{color:var(--muted);font-size:.88rem}
+.row .act{grid-row:1 / span 2;grid-column:2;display:flex;gap:6px;align-items:center}
+.price{font-family:var(--label);font-weight:700;color:var(--ok);font-variant-numeric:tabular-nums}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.msg{min-height:1.4em;color:var(--ok);font-family:var(--label);font-weight:600;letter-spacing:.03em;margin-top:6px}
+.start h2{font-size:2.2rem}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:12px 0;color:var(--muted)}
+.keys kbd{font-family:var(--label);font-weight:600;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 6px;white-space:nowrap}
+.under{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;color:var(--muted);font-size:.92rem}
+.guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:20px}
+@media (max-width:1000px){.guide{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:620px){.guide{grid-template-columns:1fr}}
+.tip{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.tip h3{font-family:var(--label);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.95rem;color:var(--lamp);margin:0 0 4px}
+.tip p{margin:0;color:var(--muted);font-size:.95rem}
+.tip p b{color:var(--fg);font-weight:600}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Untitled Emmett Game · version 0.4</div>
+      <h1>Untitled Emmett Game</h1>
+      <p>A realistic gold mine. Dig for gold-bearing quartz, crush it at the stamp mill and stay alive: cave-ins, groundwater, bad air, heat and rock too hard for a pick.</p>
+    </div>
+    <button class="ghost" id="fsBtn" type="button">Full screen</button>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="hud">
+      <div class="vignette" id="vig"></div>
+      <div class="cross"></div>
+      <div class="ring" id="ring" hidden></div>
+      <div class="tl"><span class="chip money">Cash<b id="hMoney">$100,000,000</b></span><span class="chip">Ore sacks<b id="hSack">0/8</b></span><span class="chip">Rock<b id="hRock">0</b></span></div>
+      <div class="tr"><span class="chip bird" id="hBird">Canary<b>singing</b></span><span class="chip">Temp<b id="hTemp">70°F</b></span><span class="chip">Depth<b id="hDepth">0 ft</b></span></div>
+      <div class="bars">
+        <div class="bar">Health<i id="bHealth" style="--c:#e0503a"></i></div>
+        <div class="bar">Air<i id="bAir" style="--c:#cfe9ff"></i></div>
+        <div class="bar">Heat<i id="bHeat" style="--c:#ff7a45;--v:0%"></i></div>
+      </div>
+      <div class="toast" id="toast" hidden></div>
+      <div class="prompt" id="prompt" hidden></div>
+      <div class="hotbar" id="hotbar"></div>
+    </div>
+    <div class="overlay" id="startOv">
+      <div class="card start">
+        <div class="eyebrow">Version 0.4</div>
+        <h2>Untitled Emmett Game</h2>
+        <p class="sub">You're a hard-rock gold miner. The old <b>EMMETT No. 1</b> mine is in the mountain straight ahead. Buy gear at the General Store, follow the quartz, and haul your ore sacks to the Stamp Mill. Turn your sound on.</p>
+        <div class="keys">
+          <kbd>W A S D</kbd><span>Walk. Hold Shift to run.</span>
+          <kbd>Mouse</kbd><span>Look around</span>
+          <kbd>Left click</kbd><span>Dig (hold it down), or pick gear back up</span>
+          <kbd>Right click</kbd><span>Place the item you're holding</span>
+          <kbd>Space</kbd><span>Jump. Walk into a ladder and hold W to climb.</span>
+          <kbd>Q</kbd><span>Light dynamite where you're looking (or at your feet), then run! You start with 3 sticks.</span>
+          <kbd>1 – 7</kbd><span>Choose an item</span>
+          <kbd>E</kbd><span>Use the store or mill, or feed a rat</span>
+          <kbd>Esc</kbd><span>Pause and get your mouse back</span>
+        </div>
+        <div class="foot"><button class="btn" id="playBtn" type="button">Click to play</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="under"><button class="ghost" id="resetBtn" type="button">Start a new mine</button><span>Your mine saves in this browser. If the mouse won't lock, drag to look and use F to dig and R to place.</span></div>
+
+  <section class="guide">
+    <div class="tip"><h3>Cave-ins</h3><p>A tunnel roof only holds so far from a wall: <b>about 2 blocks in dirt, 3 in rock, 4 in hard rock</b>. Past that it creaks, dust falls and it comes down. Put in <b>timber sets</b>: two posts and a cap beam across the tunnel.</p></div>
+    <div class="tip"><h3>Groundwater</h3><p>Below about <b>60 feet</b>, water seeps out of the rock and floods your tunnels. You can't breathe underwater. A <b>pump</b> drains everything near it.</p></div>
+    <div class="tip"><h3>Bad air</h3><p>Fresh air only reaches about 10 blocks from an opening. Watch your <b>canary</b>: if it stops singing, get out, or set up a <b>fan</b>. Dynamite smoke is bad air too.</p></div>
+    <div class="tip"><h3>Heat</h3><p>Rock gets hotter the deeper you go. Past about 95°F your heat bar fills up. A <b>fan</b> blowing cool air keeps you working.</p></div>
+    <div class="tip"><h3>Hard rock</h3><p>Hard rock, and quartz deep down, won't break with a pick. Buy a <b>rock drill</b> or use <b>dynamite</b>. Light the fuse, then run!</p></div>
+    <div class="tip"><h3>Rats</h3><p>Rats live in the mine. Press <b>E</b> next to one to give it a crumb, and it becomes your <b>buddy</b> and follows you. If the rats suddenly <b>run away squeaking</b>, a cave-in is coming!</p></div>
+    <div class="tip"><h3>The town</h3><p>You can dig or blast anything in town, but the townsfolk bill you <b>$1 for every board</b> you wreck. The carpenter fixes it after a while. Chop a tree to get a <b>timber set</b>.</p></div>
+    <div class="tip"><h3>Money and the mill</h3><p>Ore sacks aren't gold yet. The <b>stamp mill</b> crushes them for $1 a sack, and the assayer pays <b>$20 an ounce</b>. Deeper quartz holds more gold.</p></div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
