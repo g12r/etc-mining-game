@@ -31,6 +31,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | world generation | Hills, dirt over rock over hard rock, quartz veins with rich pockets, trees, and the town. |
 | the old mine entrance, rails, cart, lanterns | The scripted adit into the mountain that the player starts facing. |
 | building outsides and insides | Store and mill details, the shopkeeper and assayer, the animated stamp battery, chimney smoke. `kit()` merges many small shapes into one mesh per material so a shelf of cans costs one draw call. Every piece goes through `addDecor` with the blocks that hold it up. `updateTown` runs the stamps, flywheel, smoke and the two people turning to look at you. |
+| the saloon | Blocks in `TOWN_BOXES` (so the carpenter repairs it), decor in `buildSaloon`, batwing doors and the bartender in `updateSaloon`. `TOWN.z1` grew from 27 to 37 for its lot; `buildSaloonLot` flattens and builds that lot once in a save made before it existed (`G.saloon`). |
 | rats | Wandering, feeding (E), following as a buddy, and bolting before a cave-in. |
 | decor needs support / buildings fall down | Decorations and building blocks check for something underneath; without it they drop. This is what stops floating buildings. |
 | grass that sways in the wind | Instanced grass blades on the surface. |
@@ -73,6 +74,7 @@ Saved to `localStorage` under `ueg-save-v3`: the block grid, the height map, tre
 - **R did nothing.** Request 11. R placed things already, but did nothing and said nothing when he held the pickaxe, had none of the item, or aimed at the sky. Now `placeAction` always places (falling back to the spot in front of his feet) or shows why not.
 - **The first cannon blew up the player.** It fired along the look direction, the ball dropped onto the slope a few blocks ahead, and the blast hurt him. Aiming at the crosshair's hit point, and refusing targets under 5 blocks, fixed it.
 - **Pale horses.** three r128 treats a hex colour as linear, so a black horse came out grey. Horse colours go through `convertSRGBToLinear()`.
+- **Space never jumped.** From 0.1 to 0.6 the physics substeps cleared `p.ground` before every vertical move, including moves of zero, so a resting player ended each frame "in the air" and the jump check failed. Now ground is only cleared when there is vertical speed. Stair step-ups, which also check `p.ground`, started working at the same time.
 - **Floating buildings.** Blasting under the town left it hanging until the support checks were added.
 
 ## When he says it's broken

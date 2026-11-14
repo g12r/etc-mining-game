@@ -41,6 +41,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **Horses.** Nugget, Midnight and Dusty are tied up east of the store. Press `E` to ride, hold `Shift` to gallop.
 - **Shoot to assay.** Shoot a rock and the gold in it pops up on screen.
 - **Mine elevator.** Item 0. Put it down and the crew sinks a 60-foot shaft with a headframe and cage. Step in and press `E`.
+- **The saloon.** Across from the stamp mill. Press `E` at the bar for a sarsaparilla that fills your health, or at the piano to play a tune.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game

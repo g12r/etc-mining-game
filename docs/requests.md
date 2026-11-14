@@ -21,6 +21,8 @@ Every request, in his own words, in the order he made them, with what was built.
 | 15 | "add horses" | Three saddled horses, Nugget (chestnut), Midnight (black) and Dusty (grey-white), tied up east of the store. Press E next to one to get on, ride with W A S D, hold Shift to gallop, Space to jump, E to get off. Legs walk, trot and gallop, the tail swishes, hooves clip-clop and they whinny. They stay where you leave them, and that is saved. If a roof is too low you hop off. |
 | 16 | "make it so if you shoot a rock the number of gold in it pops upon yore screen" | Shoot a block and a number floats up from where the bullet hit: "0.42 oz gold $8" in gold for quartz, "No gold" for plain rock and dirt. Each block's gold is now fixed, so the number you see is what you get when you dig it. |
 | 17 | "add mine elevators" | A mine elevator, item 0. You start with one and the store sells more. Put it down and the crew levels the spot, sinks a 2-by-2 shaft 60 feet down (just above the water table), and cuts a short station tunnel at the bottom. A timber headframe with a spinning sheave wheel stands over it, and a steel cage hangs on the cable. Step in and press E to go down, E again to stop at any level, E at the bottom to go up. Away from the cage, E rings for it. Bells ring like a real hoist. Dig the shaft deeper and the cage goes deeper too. |
+| 18 | "add a soloon" | A saloon across the street from the stamp mill, with a tall SALOON false front, a porch, barrels, a hitching rail and swinging batwing doors. Inside: a long bar with a brass rail and stools, a bartender, a mirror and shelves of bottles, two tables (one with a card game), an upright piano, hanging lamps and a WANTED poster for the Black Hat Gang. E at the bar buys a sarsaparilla for $1 that fills your health; E at the piano plays a tune. Old saves get the saloon too: the town grew north and its lot is cleared and built when the mine loads. |
+| 19 | "make it so the space bar is jump" | Space already was jump, but it almost never worked, and had not since version 0.1: the player moves in several small steps per frame and the later steps forgot the player had landed, so the game thought you were always in the air. Fixed, and a quick tap is now remembered for a moment, so it jumps even when the game is running slowly. |
 
 ## Versions
 
@@ -33,7 +35,8 @@ Rough map of requests to versions. The exact split inside 0.3 was not recorded.
 | 0.3 | 4 to 8 | `history/emmett-v0.3.html` |
 | 0.4 | 9, 10 | none kept |
 | 0.5 | 11 to 14 | none kept |
-| 0.6 | 15 to 17 | `index.html` (current) |
+| 0.6 | 15 to 17 | none kept |
+| 0.7 | 18 onward | `index.html` (current) |
 
 The `history/` pages are in artifact form: they load three.js from the internet, so they need a connection to run.
 
