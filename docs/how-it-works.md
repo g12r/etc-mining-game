@@ -18,7 +18,7 @@ A guide to `src/game.js` for whoever picks this up. Section names below match th
 - `PLANK`, `LOG`, `ROOF` are building blocks. They are in `NONNET`, meaning they are drawn as crisp boxes and are left out of the smooth rock mesh.
 - `ALLOW` is how far a roof of each material spans from a wall before it starts to fail: 2 in dirt, 3 in rock, 4 in hard rock.
 
-Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5`.
+Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6`.
 
 ## Sections of game.js
 
@@ -30,6 +30,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | smooth rock mesh (surface nets) | Turns the block grid into a smooth surface, in 16³ chunks (`CS`). A chunk is rebuilt when a block in or beside it changes. |
 | world generation | Hills, dirt over rock over hard rock, quartz veins with rich pockets, trees, and the town. |
 | the old mine entrance, rails, cart, lanterns | The scripted adit into the mountain that the player starts facing. |
+| building outsides and insides | Store and mill details, the shopkeeper and assayer, the animated stamp battery, chimney smoke. `kit()` merges many small shapes into one mesh per material so a shelf of cans costs one draw call. Every piece goes through `addDecor` with the blocks that hold it up. `updateTown` runs the stamps, flywheel, smoke and the two people turning to look at you. |
 | rats | Wandering, feeding (E), following as a buddy, and bolting before a cave-in. |
 | decor needs support / buildings fall down | Decorations and building blocks check for something underneath; without it they drop. This is what stops floating buildings. |
 | grass that sways in the wind | Instanced grass blades on the surface. |
@@ -46,6 +47,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | water | Below the water table (`WTY`, about 60 ft) water seeps from rock into open tunnels and levels out. Pumps drain around them. |
 | fresh air | Air spreads about 10 blocks from any opening to the sky and from fans. Beyond that the canary goes quiet and the air bar drops. Dynamite smoke counts as bad air. |
 | explosions | Clears a sphere, including hard rock, throws debris, hurts the player if close. |
+| cannons | `fireCannon` raycasts from the camera (ignoring the cannon itself), turns the cannon to the hit point and solves the low ballistic angle for a 34 m/s ball. `updateCannons` moves the balls and calls `explodeAt` on the first solid cell or object they touch. |
 | health | Damage from falls, rocks, drowning, bad air and heat; recovery. |
 | store & mill | The General Store sells gear. The Stamp Mill crushes sacks for $1 each and the assayer pays $20 an ounce. |
 | main loop | Per-frame update and draw. |
@@ -66,6 +68,7 @@ Saved to `localStorage` under `ueg-save-v3`: the block grid, the height map, tre
 - **`smoothstep` with its edges the wrong way round.** GLSL does not define it when the first edge is larger. Use `1.0 - smoothstep(a, b, x)` with `a < b`.
 - **Q did nothing.** See request 8: no dynamite in the pack, an aim that had to be exact, and a protected town. Any one of those reads to a player as "the key is broken".
 - **R did nothing.** Request 11. R placed things already, but did nothing and said nothing when he held the pickaxe, had none of the item, or aimed at the sky. Now `placeAction` always places (falling back to the spot in front of his feet) or shows why not.
+- **The first cannon blew up the player.** It fired along the look direction, the ball dropped onto the slope a few blocks ahead, and the blast hurt him. Aiming at the crosshair's hit point, and refusing targets under 5 blocks, fixed it.
 - **Floating buildings.** Blasting under the town left it hanging until the support checks were added.
 
 ## When he says it's broken
