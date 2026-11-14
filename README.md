@@ -43,7 +43,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **Mine elevator.** Item 0. Put it down and the crew sinks a 60-foot shaft with a headframe and cage. Step in and press `E`.
 - **The saloon.** Across from the stamp mill. Press `E` at the bar for a sarsaparilla that fills your health, or at the piano to play a tune.
 - **Bandits.** The Black Hat Gang raids in three waves every few minutes, with Black Bart in the last one. Shoot a bandit twice (Bart four times) and he gives up, drops what he stole and a reward.
-- **Shotgun.** Press `9` twice. Two barrels of pellets, great for bandits up close. `R` reloads.
+- **Shotgun.** Press `9` twice. A 9-shot pump shotgun, great for bandits up close. `R` reloads.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game
