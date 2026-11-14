@@ -30,6 +30,7 @@ Every request, in his own words, in the order he made them, with what was built.
 | 24 | "make some npc people that dont have good health" | He picked "hurt miners to rescue" from three choices. Miners with hard hats and lamps work in the mine: Old Jim near the front of EMMETT No. 1, and up to three more who come down to work in your tunnels every couple of minutes. Each has a name tag and a health bar, and they start at only 45 to 70% health. They cough, slowly get worse, and get much worse in bad air, water, a cave-in or falling rock. Below 20% one collapses: an alert says who and how far away. Press E to pick him up and carry him into the open air for a $200 reward. Wait too long and he passes out and the other miners carry him up (no reward). E on a working miner lets you talk to him. |
 | 25 | "make it so you can kill them but thay walk around" | Miners now walk around the tunnels, legs swinging, stopping to work and to look at you when you come close. Bullets (35 damage), shotgun pellets (12 each) and blasts can hurt them ("OW! Hey, watch it!"). Because they are the good guys, at zero health they are knocked out rather than killed: they lie down, the sheriff fines you up to $500 and the doctor takes them away. While building this, bullets were found to stop at timber sets even through the open middle; they now pass through timber sets and ladders. |
 | 26 | "make it so only 1 can span at 1ce" | Only one miner is in the mine at a time. When he is rescued, knocked out or carried off, a new one comes down a minute and a half to two and a half minutes later. |
+| 27 | "make the map much bigger" | The claim went from 64 x 64 to 128 x 128 blocks, four times the land. The town, the old mine and the first mountain stay in the old corner; the new land has rolling hills, forests, four times as much quartz underground, and the Big Range, a long ridge of mountains across the far side. A mine saved on the small map moves into the corner of the big one with everything where it was, and the new land blends into its old edges. Saves are packed smaller, sun shadows follow you, and bandits ride in from about 40 blocks away instead of the far edge. |
 
 ## Versions
 
@@ -43,7 +44,8 @@ Rough map of requests to versions. The exact split inside 0.3 was not recorded.
 | 0.4 | 9, 10 | none kept |
 | 0.5 | 11 to 14 | none kept |
 | 0.6 | 15 to 17 | none kept |
-| 0.7 | 18 onward | `index.html` (current) |
+| 0.7 | 18 to 26 | none kept |
+| 0.8 | 27 onward | `index.html` (current) |
 
 The `history/` pages are in artifact form: they load three.js from the internet, so they need a connection to run.
 

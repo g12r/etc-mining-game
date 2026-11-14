@@ -49,17 +49,17 @@ cd tests && node smoke.js
 1. Change `src/game.js` or `src/head.html`.
 2. Build, then run the smoke test. For anything he will see or feel, also drive it in a headless browser and look at a screenshot before telling him it is done. `window.__ueg` exposes the game's insides for that.
 3. Show him. Publish `artifact.html` as an artifact so he can play right away. The game is published at https://claude.ai/artifact/CiA2R61e7n7WeLSWm5oxZN. It belongs to the account, so a new session can update it: read it with the Artifact tool first, then publish to that URL so Emmett keeps the same link.
-4. Bump the version in `src/head.html` (the "Version 0.7" line) when a batch of his requests lands, and add the requests to `docs/requests.md`.
+4. Bump the version in `src/head.html` (the "Version 0.8" line) when a batch of his requests lands, and add the requests to `docs/requests.md`.
 5. Commit to `main` and push. No pull requests for this project. The parent confirmed this in session; the push to `main` also republishes the GitHub Pages site. Write the commit message so that the history reads as the story of the game.
 
 Things that are easy to get wrong:
 
 - **Artifact rules.** `artifact.html` has no doctype, `<html>`, `<head>` or `<body>`; the publisher adds them. Scripts may only come from cdnjs (three.js r128 is there). One dark theme by design.
 - **Headless WebGL is slow.** Launch Chromium with `--use-gl=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. Frame time is capped, so fuses, collapses and water take longer than real time: wait on a condition with `waitForFunction`, not a fixed delay.
-- **Saves.** The mine saves in the browser under `ueg-save-v3`. If you change the world format, bump the key or migrate, or his old mine will load broken.
+- **Saves.** The mine saves in the browser under `ueg-save-v3`, now run-length packed with `v:2` and the map size. If you change the world format, bump the key or migrate, or his old mine will load broken. `growOldMine` is the example: it moves a 64x64 save into the corner of the 128x128 claim.
 - **Keep it realistic and not blocky.** Two of his requests were exactly that. Do not reintroduce cube-looking rock, and do not leave anything floating in the air.
 - **This repository is public.** Do not add surnames, addresses, school names, photos or contact details.
 
 ## Where the game stands
 
-Version 0.7. Everything in `docs/requests.md` is built and working as far as scripted tests show. Nobody has written down a list of what Emmett wants next; ask him.
+Version 0.8. Everything in `docs/requests.md` is built and working as far as scripted tests show. Nobody has written down a list of what Emmett wants next; ask him.

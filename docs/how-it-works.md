@@ -5,7 +5,7 @@ A guide to `src/game.js` for whoever picks this up. Section names below match th
 ## The big picture
 
 - **Engine:** three.js r128, one `<canvas>` inside `#stage`, first-person camera with pointer lock. If the mouse will not lock, the player can drag to look and F digs. R places whether or not the mouse is locked.
-- **World:** a 64 × 64 × 64 grid of blocks (`X`, `Y`, `Z`), stored in `W` as one byte per block. Ground level is `SURF = 40`; `BASE = SURF - 1`. Depth in feet is `(BASE - y) * 5`.
+- **World:** a 128 × 64 × 128 grid of blocks (`X`, `Y`, `Z`; it was 64 × 64 × 64 until version 0.8, `OLD` = 64), stored in `W` as one byte per block. Ground level is `SURF = 40`; `BASE = SURF - 1`. Depth in feet is `(BASE - y) * 5`.
 - **It does not look like blocks.** The grid is only the data. What you see is a smooth mesh built from it (see "smooth rock mesh").
 - **Debug handle:** `window.__ueg` exposes the player, game state `G`, the world arrays, `setBlock`, `breakBlock`, `addObject`, `rats`, `openStore`, `openMill`, `save` and more. Tests use it to set up a situation instead of playing to it.
 
@@ -28,7 +28,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | world constants | Sizes, block ids, spans, the town rectangle `TOWN`, the old mine entrance `ADIT`, the spawn point. |
 | three | Renderer, scene, fog, sun with shadows, sky dome, the headlamp (a spot light that casts shadows), and the rock material. |
 | smooth rock mesh (surface nets) | Turns the block grid into a smooth surface, in 16³ chunks (`CS`). A chunk is rebuilt when a block in or beside it changes. |
-| world generation | Hills, dirt over rock over hard rock, quartz veins with rich pockets, trees, and the town. |
+| world generation | Hills, dirt over rock over hard rock, quartz veins with rich pockets, trees, and the town. The first mountain stays in the old 64x64 corner; the Big Range ridge runs along z about 100. `generate(true)` fades the new land down to flat ground near the old corner's edges, to meet an old save. |
 | the old mine entrance, rails, cart, lanterns | The scripted adit into the mountain that the player starts facing. |
 | building outsides and insides | Store and mill details, the shopkeeper and assayer, the animated stamp battery, chimney smoke. `kit()` merges many small shapes into one mesh per material so a shelf of cans costs one draw call. Every piece goes through `addDecor` with the blocks that hold it up. `updateTown` runs the stamps, flywheel, smoke and the two people turning to look at you. |
 | the saloon | Blocks in `TOWN_BOXES` (so the carpenter repairs it), decor in `buildSaloon`, batwing doors and the bartender in `updateSaloon`. `TOWN.z1` grew from 27 to 37 for its lot; `buildSaloonLot` flattens and builds that lot once in a save made before it existed (`G.saloon`). |
@@ -65,7 +65,7 @@ The player starts with $100,000,000 because Emmett asked for it (request 9). The
 
 ## Save data
 
-Saved to `localStorage` under `ueg-save-v3`: the block grid, the height map, trees, `G`, the player's position, and placed objects. "Start a new mine" removes it. The save is per browser and per address, so the standalone file, an artifact and a hosted page each have their own.
+Saved to `localStorage` under `ueg-save-v3` (`v:2`: the block grid run-length packed with `rle`, plus `X` and `Z`; a save without `v` is a 64-cube from before 0.8 and goes through `growOldMine`): the height map, trees, `G`, the player's position, and placed objects. "Start a new mine" removes it. The save is per browser and per address, so the standalone file, an artifact and a hosted page each have their own.
 
 ## Mistakes already made once
 
