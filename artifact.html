@@ -172,7 +172,7 @@ const LADDER=1,TIMBER=2,PUMP=3,FAN=4,DYN=5,CANNON=6,ELEV=7;
 const idx=(x,y,z)=>(y*Z+z)*X+x;
 const inB=(x,y,z)=>x>=0&&y>=0&&z>=0&&x<X&&y<Y&&z<Z;
 const depthG=y=>BASE-y;
-const TOWN={x0:2,x1:19,z0:2,z1:37};
+const TOWN={x0:2,x1:19,z0:2,z1:61};
 const inTown=(x,y,z)=>x>=TOWN.x0&&x<=TOWN.x1&&z>=TOWN.z0&&z<=TOWN.z1&&y>=BASE;
 let W,H,B,WAT,G,player,objects,stress,openSet,openArr,openDirty=true,airD,fumes=[],items=[],falling=[],trees=[];
 const Hc=(x,z)=>H[Math.min(Z-1,Math.max(0,z))*X+Math.min(X-1,Math.max(0,x))];
@@ -316,7 +316,11 @@ const FACES=[
   {n:[0,0,1],c:[[1,0,1],[1,1,1],[0,1,1],[0,0,1]]},{n:[0,0,-1],c:[[0,0,0],[0,1,0],[1,1,0],[1,0,0]]}];
 function markDirty(x,y,z){for(let a=-2;a<=2;a+=2)for(let b=-2;b<=2;b+=2)for(let c=-2;c<=2;c+=2){const xx=x+a,yy=y+b,zz=z+c;if(xx>=0&&yy>=0&&zz>=0&&xx<X&&yy<Y&&zz<Z)dirty.add(cIdx(Math.floor(xx/CS),Math.floor(yy/CS),Math.floor(zz/CS)));}}
 const TOWN_BOXES=[[5,12,0,3,5,11,PLANK],[6,11,0,2,6,10,AIR],[5,12,4,4,5,11,ROOF],[8,9,0,1,11,11,AIR],[4,13,0,4,16,24,PLANK],[5,12,0,3,17,23,AIR],[4,13,5,5,16,24,ROOF],[8,9,0,1,24,24,AIR],[14,15,0,6,18,19,PLANK],[14,15,7,7,18,19,ROOF],
-  [5,14,0,4,29,35,PLANK],[6,13,0,3,30,34,AIR],[5,14,5,5,29,35,ROOF],[9,10,0,1,29,29,AIR]];
+  [5,14,0,4,29,35,PLANK],[6,13,0,3,30,34,AIR],[5,14,5,5,29,35,ROOF],[9,10,0,1,29,29,AIR],
+  [2,8,0,3,39,45,PLANK],[3,7,0,2,40,44,AIR],[2,8,4,4,39,45,ROOF],[8,8,0,1,41,42,AIR],
+  [2,8,0,3,48,54,PLANK],[3,7,0,2,49,53,AIR],[2,8,4,4,48,54,ROOF],[8,8,0,1,50,51,AIR],
+  [13,19,0,3,39,45,PLANK],[14,18,0,2,40,44,AIR],[13,19,4,4,39,45,ROOF],[13,13,0,1,41,42,AIR],
+  [13,19,0,3,48,56,PLANK],[14,18,0,2,49,55,AIR],[13,19,4,4,48,56,ROOF],[13,13,0,2,50,53,AIR]];
 function townType(x,y,z){let t=y>BASE?AIR:y===BASE?GRASS:DIRT;for(const b of TOWN_BOXES)if(x>=b[0]&&x<=b[1]&&y>=SURF+b[2]&&y<=SURF+b[3]&&z>=b[4]&&z<=b[5])t=b[6];return t;}
 const inTownBox=(x,y,z)=>x>=TOWN.x0&&x<=TOWN.x1&&z>=TOWN.z0&&z<=TOWN.z1&&y>=BASE-4&&y<=SURF+8;
 let townHitT=-99,billPending=0,billT=0,chopping=false,fixT=0,fixing=false;
@@ -328,7 +332,7 @@ function setBlock(x,y,z,t){const old=get(x,y,z);setBlockRaw(x,y,z,t);if(t!==AIR|
 function chopTree(x,z){const k=trees.findIndex(t=>t[0]===x&&t[1]===z);chopping=true;for(let y=1;y<Y;y++)if(W[idx(x,y,z)]===LOG)setBlockRaw(x,y,z,AIR);chopping=false;
   if(k>=0){treeGroup.remove(treeMeshes[k]);treeMeshes.splice(k,1);trees.splice(k,1);}G.pack.timber++;renderHotbar();SFX.brk();
   toast('Timber! You chopped down a tree and got 1 timber set.',3000);}
-function buildSaloonLot(){const x0=TOWN.x0,x1=TOWN.x1,z0=28,z1=TOWN.z1;
+function buildSaloonLot(z0){z0=z0||28;const x0=TOWN.x0,x1=TOWN.x1,z1=TOWN.z1;
   trees=trees.filter(([tx,tz])=>{const on=tx>=x0&&tx<=x1&&tz>=z0&&tz<=z1;if(on)for(let y=1;y<Y;y++)if(W[idx(tx,y,tz)]===LOG)W[idx(tx,y,tz)]=AIR;return !on;});
   for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){for(let y=BASE-4;y<Y;y++)W[idx(x,y,z)]=y<=SURF+8?townType(x,y,z):AIR;H[z*X+x]=BASE;}}
 function townRepair(dt){if(billPending>0){billT-=dt;if(billT<=0){toast(`Repair bill: -$${billPending}`,1600,true);billPending=0;billT=2;}}
@@ -376,13 +380,13 @@ function generate(keepOld){
   for(let z=ADIT.z0-1;z<=ADIT.z1+1;z++)for(let y=ADIT.y0-1;y<=ADIT.y1+1;y++)if(Math.random()<.7)W[idx(ADIT.x1+1,y,z)]=QUARTZ;
   for(let k=0;k<4;k++)W[idx(ADIT.x1-1-k*3,ADIT.y0+1+(k%2),ADIT.z0-1)]=QUARTZ;
   trees=[];for(let k=0;k<45;k++){const x=4+Math.floor(R()*(X-8)),z=4+Math.floor(R()*(Z-8));if(x<OLD+2&&z<OLD+2)continue;const top=H[z*X+x];if(top>BASE+6)continue;const h=4+Math.floor(R()*2);for(let y=top+1;y<=top+h;y++)W[idx(x,y,z)]=LOG;trees.push([x,z,h]);}
-  [[3,44],[10,40],[4,50],[18,58],[60,4],[58,60],[40,60],[28,4],[50,6],[6,60]].forEach(([x,z])=>{const top=H[z*X+x];const h=4+Math.floor(R()*2);for(let y=top+1;y<=top+h;y++)W[idx(x,y,z)]=LOG;trees.push([x,z,h]);});
+  [[60,4],[58,60],[40,60],[28,4],[50,6],[3,66],[12,64]].forEach(([x,z])=>{const top=H[z*X+x];const h=4+Math.floor(R()*2);for(let y=top+1;y<=top+h;y++)W[idx(x,y,z)]=LOG;trees.push([x,z,h]);});
 }
 let treeGroup=new THREE.Group(),treeMeshes=[];scene.add(treeGroup);
 function buildTrees(){scene.remove(treeGroup);treeGroup=new THREE.Group();scene.add(treeGroup);const bark=new THREE.MeshStandardMaterial({color:0x5a3d24,roughness:.95}),leaf=new THREE.MeshStandardMaterial({color:0x35652a,roughness:.9});
   treeMeshes=[];trees.forEach(([x,z,h])=>{const tg=new THREE.Group();tg.userData.cast=1;treeGroup.add(tg);treeMeshes.push(tg);const top=H[z*X+x]+1;const t=new THREE.Mesh(new THREE.CylinderGeometry(.22,.32,h+.5,8),bark);t.position.set(x+.5,top+h/2-.25,z+.5);tg.add(t);
     for(let k=0;k<3;k++){const s=new THREE.Mesh(new THREE.IcosahedronGeometry(1.5+Math.random()*.8,1),leaf);s.position.set(x+.5+(Math.random()-.5)*1.4,top+h+(Math.random()-.2)*1.2,z+.5+(Math.random()-.5)*1.4);tg.add(s);}});}
-const DOORS=[{id:'store',x:9,z:12.6,label:'Open the General Store'},{id:'mill',x:9,z:25.6,label:'Use the Stamp Mill'},{id:'store',x:9,z:9.4,label:'Buy at the counter'},{id:'mill',x:6.2,z:23.1,label:'Sell to the assayer'},{id:'saloon',x:10.8,z:32.4,label:'Order a sarsaparilla ($1)'},{id:'piano',x:7.6,z:33.0,label:'Play the piano'}];
+const DOORS=[{id:'store',x:9,z:12.6,label:'Open the General Store'},{id:'mill',x:9,z:25.6,label:'Use the Stamp Mill'},{id:'store',x:9,z:9.4,label:'Buy at the counter'},{id:'mill',x:6.2,z:23.1,label:'Sell to the assayer'},{id:'saloon',x:10.8,z:32.4,label:'Order a sarsaparilla ($1)'},{id:'piano',x:7.6,z:33.0,label:'Play the piano'},{id:'sheriff',x:7.3,z:42.6,label:'Talk to the sheriff'},{id:'bank',x:6.6,z:51.5,label:'Talk to the banker'},{id:'doctor',x:14.8,z:42.0,label:'See the doctor ($5)'},{id:'smith',x:14.9,z:52.0,label:'Talk to the blacksmith'}];
 const MAT_TOWN_WOOD=new THREE.MeshStandardMaterial({color:0x7b5230,roughness:.85});
 function signs(){const mk=(text,x,y,z)=>{const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');g.fillStyle='#e8c27a';g.fillRect(0,0,512,128);g.strokeStyle='#5b3a28';g.lineWidth=10;g.strokeRect(5,5,502,118);g.fillStyle='#2b1d12';g.font='bold 60px Georgia, serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,256,68);
   const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;const m=new THREE.Mesh(new THREE.PlaneGeometry(4,1),new THREE.MeshLambertMaterial({map:t}));m.position.set(x,y,z);scene.add(m);return m;};
@@ -429,7 +433,15 @@ const shotG=new THREE.Group();hands.add(shotG);
  shotG.userData.pump=A(new THREE.CylinderGeometry(.026,.026,.17,12),wd,0,.02,-.36,Math.PI/2);A(new THREE.BoxGeometry(.05,.06,.12),blued,0,.035,-.03);A(new THREE.BoxGeometry(.045,.07,.3),wd,0,-.01,.15,-.22);
  A(new THREE.TorusGeometry(.02,.004,6,12,Math.PI),blued,0,.002,-.02,0,Math.PI/2,Math.PI);A(new THREE.BoxGeometry(.012,.03,.02),blued,0,.072,.0,.5);}
 shotG.position.set(-.04,.02,.02);shotG.rotation.y=.07;
-function animateHands(dt,dig,walk){const holdTool=ITEMS[G.sel].id==='tool';hands.visible=holdTool||true;pickG.visible=holdTool&&G.tool!=='drill';gunG.visible=ITEMS[G.sel].id==='revolver'&&G.gun!=='shotgun';shotG.visible=ITEMS[G.sel].id==='revolver'&&G.gun==='shotgun';shotG.rotation.x=Math.min(1,gunKick)*.4;shotG.position.z=.02+Math.min(1,gunKick)*.08;shotG.userData.pump.position.z=-.36+Math.max(0,Math.sin(Math.min(1,Math.max(0,1.6-gunKick)/1.2)*Math.PI))*.09*(gunKick>0?1:0);gunKick=Math.max(0,gunKick-dt*5);gunG.rotation.x=gunKick*.5;gunG.position.z=-.05+gunKick*.05;if(gunCool>0)gunCool-=dt;drillG.visible=holdTool&&G.tool==='drill';
+const musG=new THREE.Group();hands.add(musG);
+{const iron=new THREE.MeshStandardMaterial({color:0x3a3c40,roughness:.45,metalness:.8}),wd=new THREE.MeshStandardMaterial({color:0x5a3018,roughness:.55}),brass=new THREE.MeshStandardMaterial({color:0xc9a04a,roughness:.3,metalness:.9});
+ const A=(g,m,x,y,z,rx,ry,rz)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,rz||0);musG.add(o);return o;};
+ A(new THREE.CylinderGeometry(.013,.016,.95,10),iron,0,.05,-.55,Math.PI/2);A(new THREE.BoxGeometry(.04,.035,.8),wd,0,.025,-.42);A(new THREE.BoxGeometry(.045,.075,.34),wd,0,-.01,.14,-.2);
+ musG.userData.rod=A(new THREE.CylinderGeometry(.005,.005,.85,6),wd,0,.003,-.5,Math.PI/2);for(const z of [-.75,-.5])A(new THREE.CylinderGeometry(.02,.02,.025,10),brass,0,.04,z,Math.PI/2);
+ A(new THREE.BoxGeometry(.012,.04,.07),iron,.024,.055,-.02);musG.userData.hammer=A(new THREE.BoxGeometry(.01,.045,.015),iron,.026,.085,.01,-.4);A(new THREE.BoxGeometry(.015,.03,.03),brass,.022,.045,-.06);
+ A(new THREE.TorusGeometry(.02,.004,6,12,Math.PI),iron,0,-.008,-.0,0,Math.PI/2,Math.PI);}
+musG.position.set(-.05,.03,.04);musG.rotation.y=.06;
+function animateHands(dt,dig,walk){const holdTool=ITEMS[G.sel].id==='tool';hands.visible=holdTool||true;pickG.visible=holdTool&&G.tool!=='drill';gunG.visible=ITEMS[G.sel].id==='revolver'&&G.gun!=='shotgun';shotG.visible=ITEMS[G.sel].id==='revolver'&&G.gun==='shotgun';gunG.visible=gunG.visible&&G.gun!=='musket';musG.visible=ITEMS[G.sel].id==='revolver'&&G.gun==='musket';musG.rotation.x=Math.min(1,gunKick)*.5+musReload*.7;musG.position.z=.04+Math.min(1,gunKick)*.1;musG.userData.rod.position.z=-.5+(musReload>0?Math.abs(Math.sin(time*9))*.25*musReload:0);shotG.rotation.x=Math.min(1,gunKick)*.4;shotG.position.z=.02+Math.min(1,gunKick)*.08;shotG.userData.pump.position.z=-.36+Math.max(0,Math.sin(Math.min(1,Math.max(0,1.6-gunKick)/1.2)*Math.PI))*.09*(gunKick>0?1:0);gunKick=Math.max(0,gunKick-dt*5);gunG.rotation.x=gunKick*.5;gunG.position.z=-.05+gunKick*.05;if(gunCool>0)gunCool-=dt;drillG.visible=holdTool&&G.tool==='drill';
   const sw=dig?Math.abs(Math.sin(time*8.5)):0;pickG.rotation.x=-.25-sw*1.1;pickG.position.z=-sw*.08;
   drillG.position.x=dig?(Math.random()-.5)*.012:0;if(dig)drillG.userData.bit.rotation.y+=dt*40;
   hands.position.y=-.4+(walk?Math.sin(bob)*.012:0)+(dig&&G.tool==='drill'?(Math.random()-.5)*.008:0);hands.position.x=.36+(walk?Math.cos(bob*.5)*.01:0);}
@@ -640,6 +652,78 @@ function sarsaparilla(){const p=player;if(G.money<1){toast("You can't pay for it
 let pianoBusy=false;
 function playPiano(){if(pianoBusy)return;pianoBusy=true;const N=[262,330,392,330,349,440,392,0,392,349,330,294,262,294,330,262];
   N.forEach((f,i)=>{if(f)setTimeout(()=>{tone(f,.35,.07,'triangle');tone(f*2,.2,.02,'square');if(i%2===0)tone(f/2,.3,.04,'triangle');},i*190);});setTimeout(()=>pianoBusy=false,N.length*190);toast('♪ Plink plonk! ♪',1500);}
+/* ---------- the second street: sheriff and jail, bank, doctor, blacksmith (x 2-19, z 39-56) ---------- */
+let town2=null;
+function buildTown2(){const S=SURF,PI=Math.PI;let k;
+  const plaque=(t,x,z,ry,needs,y)=>paintSign(t,2.6,.6,x,S+(y||2.75),z,ry,needs,{bg:'#e8c27a'});
+  // fronts on the street: signs, windows, boardwalks
+  plaque('SHERIFF  •  JAIL',9.04,42,PI/2,[[8,S+2,41],[8,S+2,42]]);plaque('BANK',9.04,51,PI/2,[[8,S+2,50],[8,S+2,51]]);
+  plaque('DOCTOR',12.96,42,-PI/2,[[13,S+2,41],[13,S+2,42]]);plaque('BLACKSMITH',12.96,52,-PI/2,[[13,S+3,51],[13,S+3,52]],3.45);
+  windowAt(9.02,S+1.5,44.3,PI/2,[[8,S+1,44]],true);windowAt(9.02,S+1.5,53.3,PI/2,[[8,S+1,53]],true);windowAt(9.02,S+1.5,48.9,PI/2,[[8,S+1,48]],true);windowAt(12.98,S+1.5,44.3,-PI/2,[[13,S+1,44]],true);
+  windowAt(7.98,S+1.5,44.3,-PI/2,[[8,S+1,44]]);windowAt(7.98,S+1.5,53.3,-PI/2,[[8,S+1,53]]);windowAt(14.02,S+1.5,44.3,PI/2,[[13,S+1,44]]);
+  k=kit();k.box(plankMat,1.2,.1,7,9.6,S+.05,42);k.box(plankMat,1.2,.1,7,9.6,S+.05,51);k.box(plankMat,1.2,.1,7,12.4,S+.05,42);k.box(plankMat,1.2,.1,9,12.4,S+.05,52);piece(k,[[9,BASE,42],[12,BASE,42]]);
+  // a well and a horse trough in the street
+  k=kit();k.cyl(TM.stone,.75,.8,.8,10.5,S+.4,58.5,0,0,0,16);k.cyl(TM.black,.6,.6,.05,10.5,S+.79,58.5,0,0,0,16);for(const s of [-1,1])k.box(TM.dark,.12,2.1,.12,10.5+s*.7,S+1.05,58.5);
+  k.box(roofMat,1.9,.08,1.3,10.5,S+2.25,58.5,0,0,.25);k.box(roofMat,1.9,.08,1.3,10.5,S+2.25,58.5,0,0,-.25);k.cyl(TM.dark,.05,.05,1.5,10.5,S+1.65,58.5,0,0,PI/2);k.cyl(MAT_TOWN_WOOD,.12,.1,.2,10.5,S+1.2,58.5);
+  k.box(MAT_TOWN_WOOD,.6,.45,2,10.6,S+.23,46.5);k.box(new THREE.MeshStandardMaterial({color:0x1c4a6b,roughness:.1}),.5,.02,1.9,10.6,S+.4,46.5);piece(k,[[10,BASE,58],[10,BASE,46]],true);
+  /* sheriff's office and jail: inside x 3-8, z 40-45 */
+  k=kit();k.box(plankMat,5,.05,5,5.5,S+.07,42.5);
+  for(let i=0;i<=13;i++){const z=40.1+i*.37;if(z>41.4&&z<42.3)continue;k.cyl(MAT.iron,.025,.025,2.9,5.05,S+1.47,z);}for(const y of [.15,1.5,2.85])k.box(MAT.iron,.06,.06,4.9,5.05,S+y,42.5);
+  for(const z of [41.45,42.25])k.cyl(MAT.iron,.025,.025,2.9,5.6,S+1.47,z,0,.0,0);k.box(MAT.iron,.04,.06,.8,5.6,S+1.5,41.85);k.box(MAT.iron,.04,.06,.8,5.6,S+.2,41.85);
+  k.box(MAT_TOWN_WOOD,.8,.35,1.9,3.5,S+.25,43.8);k.box(TM.cloth,.75,.08,1.85,3.5,S+.46,43.8);k.cyl(MAT.iron,.15,.12,.3,3.4,S+.15,40.6);
+  k.box(TM.dark,1.4,.75,.6,6.4,S+.42,44.45);k.box(TM.white,.25,.01,.32,6.1,S+.8,44.4,0,.3,0);k.box(TM.white,.25,.01,.32,6.5,S+.8,44.35,0,-.2,0);k.cyl(MAT.glass,.06,.06,.15,6.95,S+.88,44.5);
+  k.box(TM.dark,.9,.08,.12,7.5,S+1.8,44.92);for(let i=0;i<3;i++){k.cyl(TM.dark,.025,.025,1.1,7.2+i*.3,S+1.4,44.85,.08,0,0);k.cyl(MAT.iron,.015,.015,.6,7.2+i*.3,S+1.75,44.8,.08,0,0);}
+  piece(k,[[5,BASE,42],[6,BASE,44]],true);
+  paintSign('WANTED\nBLACK BART\n$500 REWARD',.75,1,6.4,S+1.7,40.04,0,[[6,S+1,39]],{bg:'#efe6cf'});paintSign('WANTED\nBLACK HAT\nGANG',.75,1,7.4,S+1.7,40.04,0,[[7,S+1,39]],{bg:'#efe6cf'});
+  const sheriff=person(new THREE.MeshStandardMaterial({color:new THREE.Color(0x7a5a3a).convertSRGBToLinear(),roughness:.9}),{cowboy:true,vest:true});
+  {const st=kit();st.add(new THREE.CylinderGeometry(.06,.06,.015,5),TM.brass,-.1,1.3,.235,PI/2);sheriff.add(st.done(false));}
+  sheriff.position.set(6.8,S+.06,43.5);sheriff.rotation.y=PI/2;scene.add(sheriff);addDecor(sheriff,[[6,BASE,43]]);
+  const bart=person(TM.black,{cowboy:true,bandana:true});bart.position.set(3.8,S+.06,41.6);bart.rotation.y=PI/2;scene.add(bart);
+  /* bank: inside x 3-8, z 49-54 */
+  k=kit();k.box(plankMat,5,.05,5,5.5,S+.07,51.5);k.box(TM.dark,.6,1.05,4.9,5.2,S+.55,51.5);k.box(plankMat,.8,.06,4.95,5.2,S+1.1,51.5);
+  for(let i=0;i<12;i++)k.cyl(TM.brass,.015,.015,.9,5.1,S+1.58,49.25+i*.41);k.box(TM.brass,.04,.05,4.9,5.1,S+2.05,51.5);k.box(TM.brass,.04,.05,4.9,5.1,S+1.15,51.5);
+  {const vault=new THREE.CylinderGeometry(.85,.85,.18,24);k.add(vault,MAT.iron,3.8,S+1.15,53.88,PI/2,0,0);k.cyl(TM.brass,.12,.12,.12,3.8,S+1.15,53.77,PI/2);for(let i=0;i<3;i++)k.box(TM.brass,.06,.6,.05,3.8,S+1.15,53.74,0,0,i*PI/3);
+    for(let i=0;i<10;i++){const a=i/10*2*PI;k.cyl(TM.brass,.035,.035,.05,3.8+Math.cos(a)*.7,S+1.15+Math.sin(a)*.7,53.79,PI/2);}}
+  k.box(TM.dark,1,.5,.5,3.6,S+.35,49.4);for(let r=0;r<3;r++)for(let c=0;c<4-r;c++)k.box(TM.gold,.22,.08,.11,3.25+c*.24+r*.12,S+.65+r*.08,49.4);
+  k.box(MAT.iron,.7,.9,.7,7.4,S+.5,49.6);k.cyl(TM.brass,.08,.08,.04,7.04,S+.6,49.6,0,0,PI/2);k.box(TM.dark,1.6,.08,.4,7.6,S+.48,53.4);for(const x of [6.95,8.2])k.box(TM.dark,.08,.45,.35,x,S+.23,53.4);
+  k.cyl(TM.dark,.22,.22,.05,7.9,S+2.2,53.95,PI/2,0,0,16);k.cyl(TM.white,.18,.18,.06,7.9,S+2.2,53.93,PI/2,0,0,16);piece(k,[[5,BASE,51],[3,BASE,53]],true);
+  const banker=person(TM.white,{vest:true,bowler:true});banker.position.set(4.3,S+.06,51.5);banker.rotation.y=PI/2;scene.add(banker);addDecor(banker,[[4,BASE,51]]);
+  /* doctor: inside x 14-19, z 40-45 */
+  k=kit();k.box(plankMat,5,.05,5,16.5,S+.07,42.5);
+  for(const z of [41,43.9]){k.box(MAT.iron,1.95,.06,.9,17.6,S+.5,z);for(const [a,b] of [[-.92,-.4],[.92,-.4],[-.92,.4],[.92,.4]])k.cyl(MAT.iron,.025,.025,.5,17.6+a,S+.25,z+b);k.box(TM.white,1.9,.12,.86,17.6,S+.59,z);k.box(TM.white,.35,.12,.6,18.35,S+.71,z);k.box(MAT.iron,.05,.7,.9,18.6,S+.75,z);}
+  k.box(TM.dark,1.2,1.6,.35,15.3,S+1.3,44.8);k.box(TM.jar,1.1,1.5,.02,15.3,S+1.3,44.61);for(let r=0;r<3;r++)for(let i=0;i<5;i++)k.cyl([TM.jar,TM.red,TM.yellow][(r+i)%3],.04,.045,.16,14.85+i*.22,S+.8+r*.45,44.8);
+  k.box(MAT_TOWN_WOOD,1,.75,.6,15.2,S+.38,40.55);k.box(TM.black,.35,.22,.18,15.0,S+.86,40.55);k.cyl(MAT.glass,.06,.06,.15,15.5,S+.83,40.55);piece(k,[[16,BASE,42],[17,BASE,43]],true);
+  paintSign('E\nF P\nT O Z\nL P E D',.5,.75,14.03,S+1.6,43.7,PI/2,[[13,S+1,43]],{bg:'#f4f0e4'});
+  const doc=person(TM.white,{nohat:true});doc.position.set(15.7,S+.06,42.3);doc.rotation.y=-PI/2;scene.add(doc);addDecor(doc,[[15,BASE,42]]);
+  const beds=[[17.45,41],[17.45,43.9]].map(([x,z])=>{const g=new THREE.Group();g.position.set(x,S+.72,z);scene.add(g);return {g,name:null};});
+  /* blacksmith: inside x 14-19, z 49-56 */
+  k=kit();k.box(new THREE.MeshStandardMaterial({color:0x4a3a2a,roughness:1}),5,.04,7,16.5,S+.04,52.5);k.box(TM.brick,1.5,.9,1.3,17.9,S+.45,54.9);k.box(TM.fire,1.1,.06,.9,17.9,S+.92,54.9);k.box(TM.brick,1.5,.15,1.3,17.9,S+2.1,54.9);for(const [a,b] of [[-.7,-.6],[.7,-.6]])k.box(TM.brick,.12,1.2,.12,17.9+a,S+1.5,54.9+b);
+  k.box(TM.brick,.6,2.6,.6,18.2,S+3.4,55.3);k.box(MAT.iron,.5,.55,.3,16.4,S+.28,52.6);k.box(MAT.iron,.8,.2,.3,16.4,S+.65,52.6);k.add(new THREE.ConeGeometry(.12,.35,8),MAT.iron,15.85,S+.68,52.6,0,0,PI/2);
+  k.cyl(MAT_TOWN_WOOD,.3,.3,.7,15.2,S+.42,55.2,0,0,0,14);k.cyl(new THREE.MeshStandardMaterial({color:0x1c4a6b,roughness:.1}),.27,.27,.02,15.2,S+.77,55.2,0,0,0,14);
+  for(let i=0;i<5;i++)k.add(new THREE.TorusGeometry(.09,.018,6,12,PI*1.5),MAT.iron,18.95,S+1.5+(i%2)*.3,50.2+i*.35,0,PI/2,PI*.75);
+  k.add(new THREE.TorusGeometry(.6,.05,8,24),MAT_TOWN_WOOD,18.75,S+.62,52.2,0,PI/2,.15);for(let i=0;i<6;i++)k.box(MAT_TOWN_WOOD,.04,1.15,.04,18.75,S+.62,52.2,i*PI/6,0,0);
+  k.box(TM.dark,.1,.12,1.6,18.95,S+2.1,53.4);for(let i=0;i<4;i++){k.cyl(TM.dark,.02,.02,.7,18.9,S+1.7,52.9+i*.33);k.box(MAT.iron,.04,.12,.08,18.9,S+1.3,52.9+i*.33);}
+  piece(k,[[17,BASE,54],[16,BASE,52]],true);
+  k=kit();k.cyl(TM.brick,.32,.32,1.5,18.2,S+5.6,55.3);piece(k,[[18,S+4,55]],true);smokeStack(18.2,S+6.5,55.3,6,1.1);
+  const forgeGlow=glowSprite(0xff7a2a,1.6);forgeGlow.position.set(17.9,S+1.05,54.9);scene.add(forgeGlow);
+  const smith=person(TM.dark,{apron:true,nohat:true});smith.position.set(16.95,S+.06,52.1);smith.rotation.y=-PI/2;scene.add(smith);addDecor(smith,[[16,BASE,52]]);
+  town2={bart,beds,forgeGlow,smith,sheriff,banker,doc,clangT:0};}
+function updateTown2(dt){const T=town2;if(!T)return;const p=player;T.bart.visible=!!G.bart;
+  T.forgeGlow.material.opacity=.75+Math.sin(time*11)*.12+Math.sin(time*5.3)*.1;
+  // patients: rescued miners resting in the doctor's beds
+  T.beds.forEach((b,i)=>{const n=(G.patients||[])[i]||null;if(b.name===n)return;b.name=n;while(b.g.children.length)b.g.remove(b.g.children[0]);if(n){const m=minerMesh(MINER_NAMES.indexOf(n)>=0?MINER_NAMES.indexOf(n):i);m.rotation.set(-PI2/4,0,-PI2/4);m.position.set(-.9,.2,0);b.g.add(m);}});
+  // the blacksmith hammers away when you are nearby
+  const d=Math.hypot(p.x-16.4,p.z-52.6);T.smith.rotation.x=d<20?Math.max(0,Math.sin(time*5))*.12:0;
+  if(d<16&&Math.abs(p.y-SURF)<4){T.clangT-=dt;if(T.clangT<=0){T.clangT=.63*2;const v=.1*(1-d/16);tone(1850,.35,v,'triangle',1700);tone(2900,.2,v*.5,'sine');burst(16.4,SURF+.8,52.6,0xffc060,4,2.5,{life:.25});}}
+  for(const [f,face] of [[T.sheriff,Math.PI/2],[T.banker,Math.PI/2],[T.doc,-Math.PI/2]]){const dx=p.x-f.position.x,dz=p.z-f.position.z;let want=face;if(Math.hypot(dx,dz)<7&&Math.abs(p.y-SURF)<2){const a=Math.atan2(dx,dz);want=face+Math.max(-1,Math.min(1,Math.atan2(Math.sin(a-face),Math.cos(a-face))));}f.rotation.y+=(want-f.rotation.y)*Math.min(1,dt*3);}}
+const PI2=Math.PI*2;
+function talkSheriff(){const n=G.banditsBeaten||0;const a=n?`You've run off ${n} bandit${n>1?'s':''}.`:'Watch out for the Black Hat Gang.';toast(`Sheriff: "${a} ${G.bart?'And we caught Black Bart himself! He is in my jail.':'Black Bart is still out there. Bring him in!'}"`,4200);}
+function talkBank(){toast(`Banker: "Your account holds ${money(G.money)}. It's safe in our vault, partner. Not even Black Bart can crack it!"`,4200);}
+function seeDoctor(){const p=player;if(G.money<5){toast("Doc: \"You can't pay, but I'll patch you up anyway.\"",2400);}else{G.money-=5;hud();}p.health=100;p.air=100;p.heat=0;SFX.coins();
+  const pts=(G.patients||[]);toast(`Doc: "There, all patched up!"${pts.length?` ${pts.join(' and ')} ${pts.length>1?'are':'is'} resting here. Thanks for carrying them out.`:''}`,4200);}
+function talkSmith(){if(G.steel){toast('Blacksmith: "That steel pick of yours is as sharp as they come!"',2600);return;}
+  if(G.money<150){toast('Blacksmith: "A steel pick costs $150. Come back when you have it."',2600);return;}
+  G.money-=150;G.steel=1;hud();SFX.coins();for(let i=0;i<3;i++)setTimeout(()=>tone(1850,.3,.1,'triangle',1700),i*250);toast('Blacksmith: "Here you go: a hardened steel pick! It digs 60% faster." (-$150)',4000);}
 /* ---------- rats ---------- */
 const RAT_NAMES=['Whiskers','Nibbles','Pepper','Biscuit','Gizmo','Dusty','Squeaky','Pebble','Nugget','Scamper'];
 const ratFur=new THREE.MeshStandardMaterial({color:0x3e342d,roughness:.95}),ratPink=new THREE.MeshStandardMaterial({color:0xd99a9a,roughness:.7}),ratEye=new THREE.MeshStandardMaterial({color:0x080808,roughness:.2,metalness:.3});
@@ -725,7 +809,7 @@ const beamMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blendi
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.04,1.6,7,24,1,true),beamMat);beam.rotation.x=Math.PI/2;beam.position.set(0,.06,-3.6);camera.add(beam);
 /* ---------- state ---------- */
 function freshState(){generate();
-  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36,elevator:1,shells:20},cyl:6,sh:9,gun:'revolver',saloon:1,horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
+  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36,elevator:1,shells:20,balls:15},cyl:6,sh:9,mk:1,gun:'revolver',saloon:1,town2:1,patients:[],horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
   player={x:SPAWN.x,y:Hc(22,31)+1,z:SPAWN.z,yaw:-Math.PI/2,pitch:0,vy:0,ground:false,health:100,air:100,heat:0};}
 const enc=u=>{let s='';const CH=8192;for(let i=0;i<u.length;i+=CH)s+=String.fromCharCode.apply(null,u.subarray(i,i+CH));return btoa(s);};
 const rle=u=>{const o=[];for(let i=0;i<u.length;){const v=u[i];let n=1;while(n<255&&i+n<u.length&&u[i+n]===v)n++;o.push(v,n);i+=n;}return Uint8Array.from(o);};
@@ -742,7 +826,7 @@ function growOldMine(d,w){generate(true);const oi=i=>{const x=i%OLD,z=Math.floor
   (d.obj||[]).forEach(o=>{o.i=oi(o.i);if(o.set&&o.set.cells)o.set.cells=o.set.cells.map(oi);});
   if(d.wat)for(let k=0;k<d.wat.length;k+=2)d.wat[k]=oi(d.wat[k]);
   setTimeout(()=>toast('Your claim is 4 times bigger now! New land and the Big Range mountains are out past the old edges. Your mine is just where you left it.',6000),1500);}
-function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);if(d.v===2){if(d.X!==X||d.Z!==Z)return false;W=unrle(dec(d.W),N);H=Int16Array.from(d.H);trees=d.trees||[];}else{const w=dec(d.W);if(w.length===OLD*Y*OLD)growOldMine(d,w);else if(w.length===N){W=w;H=Int16Array.from(d.H);trees=d.trees||[];}else return false;}G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(G.pack.elevator==null)G.pack.elevator=1;if(G.pack.shells==null){G.pack.shells=20;G.sh=9;G.gun='revolver';}if(!G.seen.pump9){G.seen.pump9=1;G.sh=9;}if(!G.saloon){G.saloon=1;buildSaloonLot();}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
+function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);if(d.v===2){if(d.X!==X||d.Z!==Z)return false;W=unrle(dec(d.W),N);H=Int16Array.from(d.H);trees=d.trees||[];}else{const w=dec(d.W);if(w.length===OLD*Y*OLD)growOldMine(d,w);else if(w.length===N){W=w;H=Int16Array.from(d.H);trees=d.trees||[];}else return false;}G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(G.pack.elevator==null)G.pack.elevator=1;if(G.pack.shells==null){G.pack.shells=20;G.sh=9;G.gun='revolver';}if(!G.seen.pump9){G.seen.pump9=1;G.sh=9;}if(G.pack.balls==null){G.pack.balls=15;G.mk=1;}if(!G.saloon){G.saloon=1;G.town2=1;buildSaloonLot();}if(!G.town2){G.town2=1;buildSaloonLot(38);}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
   player=Object.assign({vy:0,ground:false},d.player);return d;}catch(e){return false;}}
 function init(fromSave){
   objects&&objects.forEach(o=>scene.remove(o.mesh));objects=new Map();stress=new Map();items.forEach(it=>scene.remove(it.m));items=[];falling.forEach(f=>scene.remove(f.m));falling=[];fumes=[];
@@ -793,8 +877,8 @@ function removeObject(i){const o=objects.get(i);if(!o)return null;scene.remove(o
 
 /* ---------- HUD ---------- */
 const ITEMS=[{id:'tool',k:'1'},{id:'ladder',k:'2',name:'Ladder'},{id:'timber',k:'3',name:'Timber'},{id:'rock',k:'4',name:'Rock'},{id:'dyn',k:'5',name:'Dynamite'},{id:'pump',k:'6',name:'Pump'},{id:'fan',k:'7',name:'Fan'},{id:'cannon',k:'8',name:'Cannon'},{id:'revolver',k:'9',name:'Revolver'},{id:'elevator',k:'0',name:'Elevator'}];
-function count(id){return id==='rock'?G.rock:id==='tool'?'':id==='revolver'?(G.gun==='shotgun'?`${G.sh}/${G.pack.shells}`:`${G.cyl}/${G.pack.revolver}`):G.pack[id];}
-function renderHotbar(){$('#hotbar').innerHTML=ITEMS.map((it,i)=>`<button class="slot" type="button" data-i="${i}" aria-pressed="${G.sel===i}"><span class="k">${it.k}</span>${it.id==='tool'?(G.tool==='drill'?'Rock drill':'Pickaxe'):it.id==='revolver'&&G.gun==='shotgun'?'Shotgun':it.name}<span class="n">${it.id==='tool'?'&nbsp;':count(it.id)}</span></button>`).join('');
+function count(id){return id==='rock'?G.rock:id==='tool'?'':id==='revolver'?(G.gun==='shotgun'?`${G.sh}/${G.pack.shells}`:G.gun==='musket'?`${G.mk}/${G.pack.balls}`:`${G.cyl}/${G.pack.revolver}`):G.pack[id];}
+function renderHotbar(){$('#hotbar').innerHTML=ITEMS.map((it,i)=>`<button class="slot" type="button" data-i="${i}" aria-pressed="${G.sel===i}"><span class="k">${it.k}</span>${it.id==='tool'?(G.tool==='drill'?'Rock drill':'Pickaxe'):it.id==='revolver'&&G.gun==='shotgun'?'Shotgun':it.id==='revolver'&&G.gun==='musket'?'Musket':it.name}<span class="n">${it.id==='tool'?'&nbsp;':count(it.id)}</span></button>`).join('');
   $('#hotbar').querySelectorAll('.slot').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();G.sel=+b.dataset.i;renderHotbar();}));}
 $('#hotbar').addEventListener('mousedown',e=>e.stopPropagation());
 let toastT=0;function toast(t,ms,warn){const el=$('#toast');el.textContent=t;el.classList.toggle('warn',!!warn);el.hidden=false;toastT=(ms||2800)/1000;}
@@ -818,8 +902,8 @@ window.addEventListener('mousemove',e=>{if(locked){player.yaw-=e.movementX*.0025
   else if(dragLook&&mouseL){player.yaw-=(e.clientX-lastMX)*.005;player.pitch=Math.max(-1.5,Math.min(1.5,player.pitch-(e.clientY-lastMY)*.005));lastMX=e.clientX;lastMY=e.clientY;}});
 window.addEventListener('keydown',e=>{if(!started||panel){if(panel&&e.key==='Escape')closePanel();return;}const k=e.key.length===1?e.key.toLowerCase():e.key;
   if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))e.preventDefault();keys.add(k);if(k===' ')jumpAt=time;
-  if(k>='1'&&k<='9'){if(k==='9'&&G.sel===8){G.gun=G.gun==='shotgun'?'revolver':'shotgun';tone(700,.05,.06,'square');toast(G.gun==='shotgun'?'Pump shotgun! 9 shots. Press 9 again for the revolver.':'Revolver! Press 9 again for the shotgun.',1800);}
-    else if(k==='9')once('gunswap','Revolver ready. Press 9 again to swap to the shotgun!');G.sel=+k-1;renderHotbar();}if(k==='0'){G.sel=9;renderHotbar();}if(k==='e')interact();if(k==='q')throwDynamite();if(k==='r')placeAction();if(k==='f')clickDig();});
+  if(k>='1'&&k<='9'){if(k==='9'&&G.sel===8){G.gun={revolver:'shotgun',shotgun:'musket',musket:'revolver'}[G.gun]||'revolver';tone(700,.05,.06,'square');toast({revolver:'Revolver! 6 shots. Press 9 again for the shotgun.',shotgun:'Pump shotgun! 9 shots. Press 9 again for the musket.',musket:'Musket! One big shot, slow to reload. Press 9 again for the revolver.'}[G.gun],1800);}
+    else if(k==='9')once('gunswap','Revolver ready. Press 9 again for the shotgun, and again for the musket!');G.sel=+k-1;renderHotbar();}if(k==='0'){G.sel=9;renderHotbar();}if(k==='e')interact();if(k==='q')throwDynamite();if(k==='r')placeAction();if(k==='f')clickDig();});
 window.addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;keys.delete(k);});
 window.addEventListener('blur',()=>{keys.clear();mouseL=false;});
 $('#fsBtn').addEventListener('click',()=>{try{if(document.fullscreenElement)document.exitFullscreen();else{const r=stage.requestFullscreen&&stage.requestFullscreen();if(r&&r.catch)r.catch(()=>toast('Full screen is not available here.'));}}catch(e){toast('Full screen is not available here.');}});
@@ -1000,7 +1084,7 @@ function updateCannons(dt){objects.forEach(o=>{if(o.type!==CANNON)return;if(o.co
     if(hit||gone){scene.remove(B.m);balls.splice(b,1);if(hit){if(inB(...hit))explodeAt(...hit);else{burst(hit[0]+.5,hit[1]+.5,hit[2]+.5,0xffb347,30,12,{life:.5,g:2});SFX.boom();}}}}}
 /* ---------- the revolver: six shots, R reloads; it chips rock, knocks cans off the fence and sets off dynamite ---------- */
 let gunCool=0,gunKick=0;const cans=[];
-function shoot(){if(G.gun==='shotgun'){shootShotgun();return;}if(gunCool>0||!started||panel)return;
+function shoot(){if(G.gun==='shotgun'){shootShotgun();return;}if(G.gun==='musket'){shootMusket();return;}if(gunCool>0||!started||panel)return;
   if(G.cyl<=0){tone(900,.04,.08,'square');toast(G.pack.revolver>0?'Click! Empty. Press R to reload.':'Click! Out of bullets. Buy a box at the General Store.',2200,true);gunCool=.25;return;}
   G.cyl--;gunCool=.38;gunKick=1;renderHotbar();noise(.16,4500,.9,6);noise(.7,650,.55,2.5);flash.position.copy(camera.position);flash.intensity=2.2;
   const gp=new THREE.Vector3();gunG.userData.drum.getWorldPosition(gp);burst(gp.x+dirV.x*.3,gp.y+dirV.y*.3,gp.z+dirV.z*.3,0xffd27a,4,2,{life:.08,g:0});
@@ -1023,7 +1107,7 @@ function goldPop(t,x,y,z,hx,hy,hz){if(t===PLANK||t===ROOF||t===LOG||t===LEAF)ret
 function updatePops(dt){const w=stage.clientWidth,h=stage.clientHeight,v=new THREE.Vector3();for(let i=pops.length-1;i>=0;i--){const P=pops[i];P.t+=dt;
   if(P.t>2.2){P.el.parentNode&&P.el.parentNode.removeChild(P.el);pops.splice(i,1);continue;}v.copy(P.pos).project(camera);if(v.z>1){P.el.style.opacity=0;continue;}
   P.el.style.left=((v.x+1)/2*w)+'px';P.el.style.top=((1-v.y)/2*h-P.t*45)+'px';P.el.style.opacity=Math.min(1,(2.2-P.t)*2);}}
-function reload(){if(G.gun==='shotgun'){reloadShotgun();return;}const need=6-G.cyl;if(need<=0){toast('Already loaded. Six shots!',1200);return;}if(G.pack.revolver<=0){toast('No bullets left. Buy a box at the General Store.',2400,true);return;}
+function reload(){if(G.gun==='shotgun'){reloadShotgun();return;}if(G.gun==='musket'){reloadMusket();return;}const need=6-G.cyl;if(need<=0){toast('Already loaded. Six shots!',1200);return;}if(G.pack.revolver<=0){toast('No bullets left. Buy a box at the General Store.',2400,true);return;}
   const k=Math.min(need,G.pack.revolver);G.pack.revolver-=k;G.cyl+=k;gunCool=1;for(let i=0;i<k;i++)setTimeout(()=>tone(1300,.03,.06,'square'),120*i);setTimeout(()=>tone(650,.07,.09,'square'),120*k+150);
   toast('Reloading...',900);renderHotbar();}
 function buildRange(){const S=SURF,k=kit();for(const z of [5.5,7.6,9.7])k.box(TM.dark,.12,1.15,.12,17.5,S+.57,z);k.box(plankMat,.16,.08,4.5,17.5,S+1.11,7.6);k.box(TM.dark,.1,.08,4.3,17.5,S+.55,7.6);
@@ -1143,7 +1227,7 @@ function clearLine(ax,ay,az,bx,by,bz){const n=Math.ceil(Math.hypot(bx-ax,by-ay,b
 function banditHit(o,d,maxT){let best=null,bt=maxT;for(const b of bandits){if(b.need>=99)continue;const c=new THREE.Vector3(b.x,b.y+2.2,b.z).sub(o),t=c.dot(d);if(t<0||t>bt)continue;if(c.lengthSq()-t*t<.55*.55){best=b;bt=t;}}return best;}
 function hitBandit(b){b.hits++;for(let i=0;i<5;i++)setTimeout(()=>tone(500-i*60,.09,.07,'sawtooth'),i*70);const who=b.boss?'Black Bart':'the bandit',cash=b.boss?500:100;
   if(b.hits<b.need){if(b.hits===1)b.hatV=new THREE.Vector3((Math.random()-.5)*2,4,(Math.random()-.5)*2);const left=b.need-b.hits;toast(b.hits===1?`You shot ${who}'s hat off! ${left} more ${left>1?'hits':'hit'} and he gives up.`:`Got him! ${left} more ${left>1?'hits':'hit'}!`,2400);}
-  else{b.state='flee';b.t=0;b.need=99;if(raid)raid.beaten++;toast(`${b.boss?'BLACK BART':'The bandit'} gives up!${b.loot?' He dropped what he stole.':''} There is a $${cash} reward. Go grab the bag!`,3600);
+  else{b.state='flee';b.t=0;b.need=99;if(raid)raid.beaten++;G.banditsBeaten=(G.banditsBeaten||0)+1;if(b.boss&&!G.bart){G.bart=1;setTimeout(()=>toast('The sheriff caught Black Bart! He is locked up in the jail now.',3600),4000);}toast(`${b.boss?'BLACK BART':'The bandit'} gives up!${b.loot?' He dropped what he stole.':''} There is a $${cash} reward. Go grab the bag!`,3600);
     const m=new THREE.Group(),k=kit();k.ball(TM.cloth,.22,0,.2,0,1,1.1,1);k.cyl(TM.dark,.06,.1,.12,0,.42,0);k.cyl(TM.cloth,.05,.03,.1,0,.52,0);m.add(k.done(true));const gl=glowSprite(0xffd25e,.7);gl.position.y=.3;m.add(gl);
     m.position.set(b.x,groundBelow(b.x,b.y+1,b.z),b.z);scene.add(m);bounties.push({m,loot:b.loot,cash});b.loot=null;}}
 function moveBandit(b,dt,tx,tz,speed){let want=Math.atan2(-(tx-b.x),-(tz-b.z));let dy=Math.atan2(Math.sin(want-b.yaw),Math.cos(want-b.yaw));b.yaw+=dy*Math.min(1,dt*4);
@@ -1254,7 +1338,7 @@ function updateMiners(dt){const p=player,onTop=p.y>=Hc(Math.floor(p.x),Math.floo
       if(m.hp<=0){toast(`${m.name} passed out before you got to him. The other miners carried him up to the doctor.`,4200,true);dropMiner(i);continue;}}
     else if(m.state==='carried'){hurtOne=m;m.x=p.x;m.y=p.y;m.z=p.z;const bx=Math.sin(p.yaw)*.35,bz=Math.cos(p.yaw)*.35;
       m.m.position.set(p.x+bx-Math.cos(p.yaw)*.25,p.y+1.0,p.z+bz+Math.sin(p.yaw)*.25);m.m.rotation.set(0,p.yaw+Math.PI/2,Math.PI/2*.92);
-      if(onTop){const pay=200;G.money+=pay;hud();SFX.coins();bell(2);toast(`You saved ${m.name}! Fresh air at last. The mine company pays you a $${pay} reward, and the doctor will fix him up.`,4200);dropMiner(i);continue;}}
+      if(onTop){G.patients=[m.name].concat((G.patients||[]).filter(n=>n!==m.name)).slice(0,2);const pay=200;G.money+=pay;hud();SFX.coins();bell(2);toast(`You saved ${m.name}! Fresh air at last. The mine company pays you a $${pay} reward, and the doctor will fix him up.`,4200);dropMiner(i);continue;}}
     // name tag and health bar over his head
     const show=m.state!=='carried'&&d<14&&Math.abs(m.y-p.y)<6;m.el.style.display=show?'block':'none';
     if(show){v.set(m.x,m.y+(m.state==='down'?.75:2.15),m.z).project(camera);if(v.z>1){m.el.style.display='none';continue;}
@@ -1262,6 +1346,26 @@ function updateMiners(dt){const p=player,onTop=p.y>=Hc(Math.floor(p.x),Math.floo
       m.el.className='npc'+(m.state==='down'||m.state==='ko'?' down':'');m.el.innerHTML=`${m.state==='down'?'HELP! ':m.state==='ko'?'KNOCKED OUT ':''}${m.name}<i><b style="width:${Math.max(0,m.hp)}%;background:${col}"></b></i>`;}}
   const chip=$('#hMiner');if(hurtOne){chip.hidden=false;const dd=Math.round(Math.hypot(hurtOne.x-p.x,hurtOne.z-p.z)),down=Math.max(0,Math.round((SURF-hurtOne.y)*5));
     chip.querySelector('b').textContent=hurtOne.state==='carried'?`carrying ${hurtOne.name} · get to the surface`:`${hurtOne.name} · ${dd} m away${down>0?', '+down+' ft down':''}`;}else chip.hidden=true;}
+/* ---------- the musket: a flintlock. One heavy ball, a puff of smoke, and a long reload with powder and ramrod ---------- */
+let musReload=0,musBusy=false;
+function shootMusket(){if(gunCool>0||musBusy||!started||panel)return;
+  if(G.mk<=0){tone(700,.05,.08,'square');toast(G.pack.balls>0?"Click! The musket isn't loaded. Press R to load it.":'Out of musket balls! Buy more at the General Store.',2200,true);gunCool=.25;return;}
+  G.mk=0;musBusy=true;renderHotbar();tone(600,.05,.07,'square');noise(.12,5000,.25,3);   // the flint strikes and the pan flashes...
+  setTimeout(()=>{musBusy=false;if(!started)return;gunKick=1.8;shakeT=Math.max(shakeT,.2);noise(.35,2000,1,3.5);noise(1.6,300,.9,1.6);flash.position.copy(camera.position);flash.intensity=3.5;
+    camera.getWorldDirection(dirV);const o=camera.position.clone(),d=dirV.clone();
+    {const gp=new THREE.Vector3();musG.getWorldPosition(gp);for(let i=0;i<6;i++)burst(gp.x+d.x*(1+i*.25),gp.y+d.y*(1+i*.25)+.05,gp.z+d.z*(1+i*.25),0xf0eee8,2,.6,{life:2.2,g:-.3});burst(gp.x+d.x,gp.y+d.y,gp.z+d.z,0xffd27a,8,3,{life:.1,g:0});}
+    const h=rayFrom(o,d,90,true);let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):90,can=null;
+    for(const c of cans){if(c.down||!c.m.visible)continue;const v=c.m.position.clone().sub(o),t=v.dot(d);if(t<0||t>bt)continue;if(v.lengthSq()-t*t<.15*.15){can=c;bt=t;}}
+    if(can){knockCan(can,d);return;}
+    const bh=banditHit(o,d,bt);if(bh){hitBandit(bh);if(bh.need<99)hitBandit(bh);return;}
+    const mh=minerHit(o,d,bt);if(mh){hurtMiner(mh,60);return;}
+    if(!h)return;if(h.obj){const ob=objects.get(h.i);if(ob&&ob.type===DYN){ob.fuse=Math.min(ob.fuse,.05);toast('You shot the dynamite!',1500,true);}return;}
+    const t=W[h.i],hx=h.x+.5+h.nx*.52,hy=h.y+.5+h.ny*.52,hz=h.z+.5+h.nz*.52;goldPop(t,h.x,h.y,h.z,hx,hy,hz);burst(hx,hy,hz,t===PLANK||t===ROOF||t===LOG?0x8a6a45:(COLOR[t]||0x888888),10,3.5,{life:.5});
+    once('musket','KA-BOOM! A musket ball counts as two hits on a bandit. Now press R to load it again: powder, ball, ramrod.');},150);}
+function reloadMusket(){if(G.mk>0){toast('The musket is already loaded!',1200);return;}if(G.pack.balls<=0){toast('No musket balls left. Buy more at the General Store.',2400,true);return;}if(musReload>0)return;
+  G.pack.balls--;gunCool=2.6;musReload=1;toast('Loading: powder... ball... ramrod...',2400);noise(.5,6000,.06,1);
+  [700,1100,1500].forEach(t=>setTimeout(()=>noise(.18,1200,.12,2),t));setTimeout(()=>{tone(500,.05,.08,'square');tone(900,.04,.07,'square');},2300);
+  setTimeout(()=>{G.mk=1;musReload=0;renderHotbar();},2500);renderHotbar();}
 /* ---------- health ---------- */
 let hurtFlash=0,hurtSndT=0;
 function hurt(n,why){player.health-=n;if(why||time-hurtSndT>1){hurtSndT=time;SFX.hurt();hurtFlash=.6;}if(why)toast(why,2600,true);if(player.health<=0)passOut();}
@@ -1275,7 +1379,7 @@ function openPanel(html){if(document.pointerLockElement)document.exitPointerLock
   panel.addEventListener('mousedown',e=>e.stopPropagation());return panel;}
 function closePanel(){if(panel){panel.remove();panel=null;tryLock();}}
 const SHOP=[{sec:'Supplies'},{id:'ladder',name:'Ladder',ds:'Climb up and down shafts. Place it against a wall.',price:2,bulk:5},{id:'timber',name:'Timber set',ds:'Two posts and a cap beam. Holds up the roof across the whole tunnel, up to 5 blocks wide.',price:5,bulk:3},
-  {id:'dyn',name:'Dynamite',ds:'Breaks any rock. 5-second fuse. Leaves bad air behind.',price:6,bulk:3},{sec:'Equipment'},{id:'pump',name:'Steam pump',ds:'Drains groundwater all around it.',price:45},{id:'fan',name:'Ventilation fan',ds:'Blows fresh, cool air into your tunnels.',price:40},{id:'revolver',name:'Box of bullets',ds:'50 cartridges for your revolver (item 9).',price:5},{id:'shells',name:'Box of shotgun shells',ds:'25 shells for your pump shotgun (press 9 twice).',price:4},{id:'elevator',name:'Mine elevator',ds:'A headframe, hoist and cage. Where you put it, the crew sinks a 60-foot shaft. Ride it with E.',price:500},{id:'cannon',name:'Cannon',ds:'Shoots an iron cannonball that blows up when it hits something. Stand next to it and press E.',price:50},
+  {id:'dyn',name:'Dynamite',ds:'Breaks any rock. 5-second fuse. Leaves bad air behind.',price:6,bulk:3},{sec:'Equipment'},{id:'pump',name:'Steam pump',ds:'Drains groundwater all around it.',price:45},{id:'fan',name:'Ventilation fan',ds:'Blows fresh, cool air into your tunnels.',price:40},{id:'revolver',name:'Box of bullets',ds:'50 cartridges for your revolver (item 9).',price:5},{id:'shells',name:'Box of shotgun shells',ds:'25 shells for your pump shotgun (press 9 twice).',price:4},{id:'balls',name:'Musket balls and powder',ds:'20 shots for your musket (press 9 three times).',price:4},{id:'elevator',name:'Mine elevator',ds:'A headframe, hoist and cage. Where you put it, the crew sinks a 60-foot shaft. Ride it with E.',price:500},{id:'cannon',name:'Cannon',ds:'Shoots an iron cannonball that blows up when it hits something. Stand next to it and press E.',price:50},
   {id:'drill',name:'Rock drill',ds:'Breaks hard rock and deep quartz, and digs twice as fast.',price:75,own:()=>G.tool==='drill'},{id:'lantern',name:'Big carbide lamp',ds:'Lights up much more of the tunnel.',price:20,own:()=>G.lantern>13},{id:'sacks',name:'More ore sacks',ds:'Carry 16 sacks instead of 8.',price:25,own:()=>G.cap>8}];
 function openStore(msg){const rows=SHOP.map(s=>{if(s.sec)return `<h4>${s.sec}</h4>`;const owned=s.own&&s.own();
     const act=owned?'<span class="ds">Owned</span>':`<span class="price">$${s.price}</span><button class="btn" data-b="${s.id}" data-q="1" ${G.money<s.price?'disabled':''}>Buy</button>${s.bulk?`<button class="ghost" data-b="${s.id}" data-q="${s.bulk}" ${G.money<s.price*s.bulk?'disabled':''}>×${s.bulk}</button>`:''}`;
@@ -1283,7 +1387,7 @@ function openStore(msg){const rows=SHOP.map(s=>{if(s.sec)return `<h4>${s.sec}</h
   const p=openPanel(`<h2>General Store</h2><p class="sub">Cash: <span class="price">${money(G.money)}</span></p>${rows}<div class="msg">${msg||''}</div><div class="foot"><button class="ghost" data-x>Back to the mine (Esc)</button></div>`);
   p.querySelector('[data-x]').addEventListener('click',closePanel);
   p.querySelectorAll('[data-b]').forEach(b=>b.addEventListener('click',()=>{const s=SHOP.find(t=>t.id===b.dataset.b),q=+b.dataset.q,cost=s.price*q;if(G.money<cost)return;G.money-=cost;SFX.coins();
-    if(s.id==='drill')G.tool='drill';else if(s.id==='lantern')G.lantern=22;else if(s.id==='sacks')G.cap=16;else if(s.id==='revolver')G.pack.revolver+=50*q;else if(s.id==='shells')G.pack.shells+=25*q;else G.pack[s.id]+=q;hud();renderHotbar();save();panel.remove();panel=null;openStore(`Bought: ${s.name}${q>1?' ×'+q:''}.`);}));}
+    if(s.id==='drill')G.tool='drill';else if(s.id==='lantern')G.lantern=22;else if(s.id==='sacks')G.cap=16;else if(s.id==='revolver')G.pack.revolver+=50*q;else if(s.id==='shells')G.pack.shells+=25*q;else if(s.id==='balls')G.pack.balls+=20*q;else G.pack[s.id]+=q;hud();renderHotbar();save();panel.remove();panel=null;openStore(`Bought: ${s.name}${q>1?' ×'+q:''}.`);}));}
 function openMill(){const n=G.sack.length;let body;
   if(!n)body=`<p class="sub">"Bring me ore sacks and I'll crush 'em. The mill fee is $1 a sack, and the assayer pays $20 an ounce for gold."</p>`;
   else body=`<p class="sub">You have <b>${n}</b> ore sack${n>1?'s':''}. The mill fee is <span class="price">$1</span> a sack. The assayer pays <span class="price">$20</span> an ounce.</p><div class="foot" style="justify-content:flex-start"><button class="btn" data-m>Crush my ore</button></div><div class="msg" data-r></div>`;
@@ -1293,7 +1397,7 @@ function openMill(){const n=G.sack.length;let body;
     noise(1.2,300,.6,1);setTimeout(SFX.coins,700);m.disabled=true;p.querySelector('[data-r]').innerHTML=`The stamps pounded your ore to powder. You got <b>${oz.toFixed(2)} oz</b> of gold, worth $${gross}. After the $${fee} mill fee, you get <span class="price">$${net}</span>.`;hud();save();
     if(oz/n>.6)once('rich','That was rich ore! Deeper quartz, and quartz with gold streaks in it, is worth the most.');});}
 function nearDoor(){return DOORS.find(d=>Math.hypot(player.x-d.x,player.z-d.z)<2.2&&Math.abs(player.y-SURF)<.6);}
-function interact(){if(riding){dismount();return;}if(carrying){const el=nearElev();if(el){useElev(el);return;}putDown();return;}const mn=nearMiner();if(mn){minerE(mn);return;}const el=nearElev();if(el){useElev(el);return;}const hn=nearHorse();if(hn&&!nearCannon()){mount(hn);return;}const cn=nearCannon();if(cn){fireCannon(cn);return;}const rt=nearRat();if(rt&&!nearDoor()){feedRat(rt);return;}const d=nearDoor();if(!d)return;if(d.id==='store')openStore();else if(d.id==='saloon')sarsaparilla();else if(d.id==='piano')playPiano();else openMill();}
+function interact(){if(riding){dismount();return;}if(carrying){const el=nearElev();if(el){useElev(el);return;}putDown();return;}const mn=nearMiner();if(mn){minerE(mn);return;}const el=nearElev();if(el){useElev(el);return;}const hn=nearHorse();if(hn&&!nearCannon()){mount(hn);return;}const cn=nearCannon();if(cn){fireCannon(cn);return;}const rt=nearRat();if(rt&&!nearDoor()){feedRat(rt);return;}const d=nearDoor();if(!d)return;if(d.id==='store')openStore();else if(d.id==='saloon')sarsaparilla();else if(d.id==='piano')playPiano();else if(d.id==='sheriff')talkSheriff();else if(d.id==='bank')talkBank();else if(d.id==='doctor')seeDoctor();else if(d.id==='smith')talkSmith();else openMill();}
 
 /* ---------- main loop ---------- */
 const dustGeo=new THREE.CircleGeometry(.45,10),dustMat=new THREE.MeshBasicMaterial({color:0x5a1e14,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false});const crackPool=[];
@@ -1326,12 +1430,12 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   if(digging){if(digCell!==target.i){digCell=target.i;digP=0;}const t=W[target.i];
     if(headUnder())once('wetdig',"You can't dig underwater! Pump the water out first.",true);
     else{const tt=digTime(t,target.y);if(tt===Infinity){if(t===BED)once('bed','Bedrock. Nothing gets through that.');else once('hard','Clank! This rock is too hard for a pickaxe. Buy a rock drill, or use dynamite.',true);}
-      else{digP+=dt/tt;if(Math.random()<dt*9){SFX.hit();burst(target.x+.5+target.nx*.55,target.y+.5+target.ny*.55,target.z+.5+target.nz*.55,COLOR[t]||0x777777,2,2);}
+      else{digP+=dt/tt*(G.steel?1.6:1);if(Math.random()<dt*9){SFX.hit();burst(target.x+.5+target.nx*.55,target.y+.5+target.ny*.55,target.z+.5+target.nz*.55,COLOR[t]||0x777777,2,2);}
         if(digP>=1){breakBlock(target.x,target.y,target.z);digP=0;digCell=-1;}}}}
   else digP=Math.max(0,digP-dt*2);
   ring.style.setProperty('--p',(digP*100).toFixed(0)+'%');ring.hidden=digP<=0;
   objects.forEach(o=>{if(o.type!==DYN)return;o.fuse-=dt;if(Math.random()<dt*30)burst(o.mesh.position.x,o.mesh.position.y,o.mesh.position.z,0xffd37a,1,1.5,{life:.3,g:-2});if(o.fuse<=0)explode(o);});
-  updateCannons(dt);updateMiners(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
+  updateCannons(dt);updateTown2(dt);updateMiners(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
   caveT+=dt;if(caveT>.4){caveCheck(caveT);caveT=0;}
   waterT+=dt;if(waterT>.1){waterTick();waterT=0;}
   wbT+=dt;if(wbT>.25){buildWater();wbT=0;}
@@ -1396,9 +1500,9 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   if(toastT>0){toastT-=dt;if(toastT<=0)$('#toast').hidden=true;}
   saveT+=dt;if(saveT>12){saveT=0;save();}
   renderer.render(scene,camera);requestAnimationFrame(frame);}
-init(true);signs();buildTown();buildSaloon();setTimeout(()=>spawnMiner([ADIT.x0+6,ADIT.y0,ADIT.z0+1]),0);buildRange();buildHorses();buildDecor();resize();
+init(true);signs();buildTown();buildSaloon();buildTown2();setTimeout(()=>spawnMiner([ADIT.x0+6,ADIT.y0,ADIT.z0+1]),0);buildRange();buildHorses();buildDecor();resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-window.__ueg={miners:()=>miners,hurtMiner,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
+window.__ueg={cans:()=>cans,camera,miners:()=>miners,hurtMiner,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
 requestAnimationFrame(frame);
 })();
 </script>
