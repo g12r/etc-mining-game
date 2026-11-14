@@ -53,6 +53,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .slot[aria-pressed="true"]{border-color:var(--lamp);background:rgba(70,48,18,.92)}
 .toast{position:absolute;left:50%;top:48px;transform:translateX(-50%);background:rgba(12,10,8,.92);border:1px solid var(--lamp);border-radius:6px;padding:6px 14px;max-width:min(92%,640px);text-align:center;color:var(--fg)}
 .toast.warn{border-color:var(--warn)}
+.npc{position:absolute;transform:translate(-50%,-100%);font-family:var(--label);font-weight:700;font-size:.95rem;color:var(--fg);text-align:center;text-shadow:0 1px 3px #000;white-space:nowrap;pointer-events:none}
+.npc.down{color:var(--warn)}.npc i{display:block;width:64px;height:6px;margin:2px auto 0;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);border-radius:3px;overflow:hidden}.npc i b{display:block;height:100%}
 .pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--label);font-weight:700;font-size:1.25rem;color:var(--muted);text-shadow:0 2px 3px #000,0 0 2px #000;white-space:nowrap;pointer-events:none}
 .pop.gold{color:var(--gold);font-size:1.6rem}.pop small{color:var(--ok);font-size:.8em;margin-left:4px}
 .prompt{position:absolute;left:50%;top:calc(50% + 28px);transform:translateX(-50%);background:rgba(12,10,8,.88);border:1px solid var(--lamp);border-radius:6px;padding:3px 12px;white-space:nowrap}
@@ -96,7 +98,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <div class="vignette" id="vig"></div>
       <div class="cross"></div>
       <div class="ring" id="ring" hidden></div>
-      <div class="tl"><span class="chip money">Cash<b id="hMoney">$100,000,000</b></span><span class="chip">Ore sacks<b id="hSack">0/8</b></span><span class="chip">Rock<b id="hRock">0</b></span><span class="chip raid" id="hWave" hidden>Bandits<b></b></span></div>
+      <div class="tl"><span class="chip money">Cash<b id="hMoney">$100,000,000</b></span><span class="chip">Ore sacks<b id="hSack">0/8</b></span><span class="chip">Rock<b id="hRock">0</b></span><span class="chip raid" id="hWave" hidden>Bandits<b></b></span><span class="chip raid" id="hMiner" hidden>Hurt miner<b></b></span></div>
       <div class="tr"><span class="chip bird" id="hBird">Canary<b>singing</b></span><span class="chip">Temp<b id="hTemp">70°F</b></span><span class="chip">Depth<b id="hDepth">0 ft</b></span></div>
       <div class="bars">
         <div class="bar">Health<i id="bHealth" style="--c:#e0503a"></i></div>

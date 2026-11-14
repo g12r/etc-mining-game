@@ -898,7 +898,7 @@ function buildHorses(){horses.forEach(h=>scene.remove(h.m));horses.length=0;ridi
   G.horses.forEach(d=>{const look=HORSE_LOOKS[d.c%3],m=horseMesh(look);scene.add(m);const y=d.y!=null?d.y:groundBelow(d.x,SURF+14,d.z);horses.push({d,m,name:look.name,x:d.x,y,z:d.z,yaw:d.yaw,ph:Math.random()*6,spd:0,idle:Math.random()*5});});}
 function nearHorse(){let best=null,bd=2.1;for(const h of horses){if(h===riding)continue;const d=Math.hypot(h.x-player.x,h.z-player.z);if(d<bd&&Math.abs(h.y-player.y)<1.6){bd=d;best=h;}}return best;}
 function whinny(){for(let i=0;i<9;i++)setTimeout(()=>tone(950-i*45+(i%2)*140,.08,.045,'sawtooth'),i*50);setTimeout(()=>noise(.4,500,.08,1.5),480);}
-function mount(h){riding=h;const p=player;p.x=h.x;p.z=h.z;p.y=Math.max(p.y,h.y);p.yaw=h.yaw;whinny();
+function mount(h){if(carrying){toast(`You can't ride while carrying ${carrying.name}. Put him down first.`,2200);return;}riding=h;const p=player;p.x=h.x;p.z=h.z;p.y=Math.max(p.y,h.y);p.yaw=h.yaw;whinny();
   once('horse',`You're riding ${h.name}! W A S D to ride, hold Shift to gallop, Space to jump. Press E to get off.`);}
 function dismount(){const h=riding,p=player;riding=null;h.spd=0;const side=[[Math.cos(h.yaw),-Math.sin(h.yaw)],[-Math.cos(h.yaw),Math.sin(h.yaw)]];
   for(const [sx,sz] of side){const nx=h.x+sx*.95,nz=h.z+sz*.95;if(!solid(Math.floor(nx),Math.floor(p.y+.2),Math.floor(nz))&&!solid(Math.floor(nx),Math.floor(p.y+1.2),Math.floor(nz))){p.x=nx;p.z=nz;break;}}save();}
@@ -1040,6 +1040,51 @@ function shootShotgun(){if(gunCool>0||!started||panel)return;
 function reloadShotgun(){const need=9-G.sh;if(need<=0){toast('Fully loaded: 9 shells!',1200);return;}if(G.pack.shells<=0){toast('No shells left. Buy a box at the General Store.',2400,true);return;}
   const k=Math.min(need,G.pack.shells);G.pack.shells-=k;G.sh+=k;gunCool=.4+k*.18;for(let i=0;i<k;i++)setTimeout(()=>tone(900,.04,.07,'square'),i*180);setTimeout(()=>{noise(.08,1500,.2,3);tone(380,.06,.1,'square');},k*180+150);
   toast('Reloading...',900);renderHotbar();}
+/* ---------- miners: they work down in the mine, but their health is poor. When one collapses, find him and carry him up into the open air ---------- */
+const miners=[],MINER_NAMES=['Old Jim','Cousin Jack','Hank','Lefty','Ike','Big Sam','Dutch','Whitey'];let minerT=110,carrying=null,minerN=0;
+function minerMesh(i){const g=new THREE.Group(),body=person([TM.blue,TM.red,TM.green,TM.cloth][i%4],{nohat:true});g.add(body);const k=kit();
+  k.ball(TM.dark,.165,0,1.75,0,1,.62,1.05);k.cyl(TM.dark,.21,.21,.02,0,1.72,.02,0,0,0,16);k.cyl(TM.brass,.035,.04,.07,0,1.79,.17,Math.PI/2);
+  k.cyl(MAT_TOWN_WOOD,.02,.02,.7,.31,1.02,.2,.5,0,0);k.cyl(steelM,.016,.025,.4,.31,1.33,.37,0,0,Math.PI/2);g.add(k.done(true));
+  const lamp=glowSprite(0xffd28a,.35);lamp.position.set(0,1.79,.22);g.add(lamp);return g;}
+function minerSpot(){const p=player,list=openArr||[];let best=null,bd=1e9;
+  for(let t=0;t<500&&list.length;t++){const i=list[Math.floor(Math.random()*list.length)],x=i%X,z=Math.floor(i/X)%Z,y=Math.floor(i/(X*Z));
+    if(!floorOK(x,y,z)||!inB(x,y+1,z)||W[idx(x,y+1,z)]!==AIR||y>=Hc(x,z)-1)continue;const d=Math.hypot(x+.5-p.x,y-p.y,z+.5-p.z);if(d<4)continue;const score=Math.abs(d-14)+Math.random()*4;if(score<bd){bd=score;best=[x,y,z];}}
+  return best;}
+function spawnMiner(at){const s=at||minerSpot();if(!s)return null;const i=minerN++,m=minerMesh(i);scene.add(m);
+  const el=document.createElement('div');el.className='npc';$('.hud').appendChild(el);
+  const mn={m,el,x:s[0]+.5,y:s[1],z:s[2]+.5,yaw:Math.random()*6.28,hp:45+Math.random()*25,name:MINER_NAMES[i%MINER_NAMES.length],state:'work',ph:Math.random()*6,coughT:3+Math.random()*5};miners.push(mn);return mn;}
+function nearMiner(){let best=null,bd=1.9;for(const m of miners){if(m===carrying)continue;const d=Math.hypot(m.x-player.x,m.z-player.z);if(d<bd&&Math.abs(m.y-player.y)<1.6){bd=d;best=m;}}return best;}
+function cough(m,d){const v=Math.max(.02,.12*(1-d/16));noise(.12,700,v,2);setTimeout(()=>noise(.14,600,v*.9,2),200);}
+function minerE(m){if(m.state==='down'){carrying=m;m.state='carried';tone(300,.15,.06,'triangle',220);toast(`You've got ${m.name}! Get him up into the open air, above ground. (E puts him down.)`,3600);return;}
+  const lines=m.hp>60?["Howdy! Watch that roof, partner.","Found some good quartz down here!","My rat Biscuit keeps me company."]:["*cough cough* My lungs ain't so good...","I don't feel so well. I need fresh air...","*cough* The bad air down here gets me."];
+  toast(`${m.name}: "${lines[Math.floor(Math.random()*lines.length)]}"  Health ${Math.round(m.hp)}%`,3000);}
+function putDown(){const m=carrying;carrying=null;m.state='down';m.x=player.x-Math.sin(player.yaw)*.8;m.z=player.z-Math.cos(player.yaw)*.8;m.y=groundBelow(m.x,player.y+.5,m.z);toast(`You put ${m.name} down.`,1500);}
+function dropMiner(i){const m=miners[i];scene.remove(m.m);m.el.parentNode&&m.el.parentNode.removeChild(m.el);miners.splice(i,1);if(carrying===m)carrying=null;}
+function updateMiners(dt){const p=player,onTop=p.y>=Hc(Math.floor(p.x),Math.floor(p.z))-.5&&under<.4;
+  if(started&&!panel){minerT-=dt;if(minerT<=0){minerT=90+Math.random()*60;if(miners.filter(m=>m.state!=='carried').length<3){const m=spawnMiner();if(m&&Math.hypot(m.x-p.x,m.z-p.z)<20)toast(`${m.name} came down to work in your mine.`,2200);}}}
+  const w=stage.clientWidth,h=stage.clientHeight,v=new THREE.Vector3();let hurtOne=null;
+  for(let i=miners.length-1;i>=0;i--){const m=miners[i],cx=Math.floor(m.x),cy=Math.floor(m.y+.2),cz=Math.floor(m.z),d=Math.hypot(m.x-p.x,m.y-p.y,m.z-p.z);
+    if(m.state==='work'){let rate=.1;if(airAt(cx,cy+1,cz)>10)rate+=1.2;if(water(cx,cy+1,cz)>.45)rate+=5;if(solid(cx,cy,cz)||solid(cx,cy+1,cz))rate+=8;
+      for(const f of falling)if(!f.hitMiner&&Math.abs(f.x+.5-m.x)<1&&Math.abs(f.z+.5-m.z)<1&&f.y<m.y+2&&f.y>m.y-.5){f.hitMiner=1;m.hp-=35;}
+      m.hp-=rate*dt;const gy=groundBelow(m.x,m.y+.3,m.z);if(gy<m.y-.05)m.y=Math.max(gy,m.y-dt*8);
+      if(m.hp<60){m.coughT-=dt;if(m.coughT<=0){m.coughT=4+Math.random()*6;if(d<16)cough(m,d);}}
+      if(d<6){const want=Math.atan2(p.x-m.x,p.z-m.z);m.yaw+=Math.atan2(Math.sin(want-m.yaw),Math.cos(want-m.yaw))*Math.min(1,dt*3);}
+      if(m.hp<=20){m.state='down';m.hp=20;for(let k=0;k<3;k++)setTimeout(()=>tone(520-k*40,.25,.06,'sawtooth',380),k*300);
+        toast(`HELP! ${m.name} collapsed in the mine! Find him and carry him out into the fresh air (press E next to him).`,4800,true);}
+      m.m.rotation.set(Math.sin(time*4+m.ph)*.07*(m.hp>35?1:.3),m.yaw,0);m.m.position.set(m.x,m.y+.05,m.z);}
+    else if(m.state==='down'){m.hp-=.22*dt;hurtOne=hurtOne||m;const gy=groundBelow(m.x,m.y+.3,m.z);if(gy<m.y-.05)m.y=Math.max(gy,m.y-dt*8);
+      m.m.rotation.set(-Math.PI/2,m.yaw,0);m.m.position.set(m.x,m.y+.18,m.z);
+      if(m.hp<=0){toast(`${m.name} passed out before you got to him. The other miners carried him up to the doctor.`,4200,true);dropMiner(i);continue;}}
+    else if(m.state==='carried'){hurtOne=m;m.x=p.x;m.y=p.y;m.z=p.z;const bx=Math.sin(p.yaw)*.35,bz=Math.cos(p.yaw)*.35;
+      m.m.position.set(p.x+bx-Math.cos(p.yaw)*.25,p.y+1.0,p.z+bz+Math.sin(p.yaw)*.25);m.m.rotation.set(0,p.yaw+Math.PI/2,Math.PI/2*.92);
+      if(onTop){const pay=200;G.money+=pay;hud();SFX.coins();bell(2);toast(`You saved ${m.name}! Fresh air at last. The mine company pays you a $${pay} reward, and the doctor will fix him up.`,4200);dropMiner(i);continue;}}
+    // name tag and health bar over his head
+    const show=m.state!=='carried'&&d<14&&Math.abs(m.y-p.y)<6;m.el.style.display=show?'block':'none';
+    if(show){v.set(m.x,m.y+(m.state==='down'?.75:2.15),m.z).project(camera);if(v.z>1){m.el.style.display='none';continue;}
+      m.el.style.left=((v.x+1)/2*w)+'px';m.el.style.top=((1-v.y)/2*h)+'px';const col=m.hp>50?'#8fd16a':m.hp>30?'#f2b33d':'#ff8f73';
+      m.el.className='npc'+(m.state==='down'?' down':'');m.el.innerHTML=`${m.state==='down'?'HELP! ':''}${m.name}<i><b style="width:${Math.max(0,m.hp)}%;background:${col}"></b></i>`;}}
+  const chip=$('#hMiner');if(hurtOne){chip.hidden=false;const dd=Math.round(Math.hypot(hurtOne.x-p.x,hurtOne.z-p.z)),down=Math.max(0,Math.round((SURF-hurtOne.y)*5));
+    chip.querySelector('b').textContent=hurtOne.state==='carried'?`carrying ${hurtOne.name} · get to the surface`:`${hurtOne.name} · ${dd} m away${down>0?', '+down+' ft down':''}`;}else chip.hidden=true;}
 /* ---------- health ---------- */
 let hurtFlash=0,hurtSndT=0;
 function hurt(n,why){player.health-=n;if(why||time-hurtSndT>1){hurtSndT=time;SFX.hurt();hurtFlash=.6;}if(why)toast(why,2600,true);if(player.health<=0)passOut();}
@@ -1071,7 +1116,7 @@ function openMill(){const n=G.sack.length;let body;
     noise(1.2,300,.6,1);setTimeout(SFX.coins,700);m.disabled=true;p.querySelector('[data-r]').innerHTML=`The stamps pounded your ore to powder. You got <b>${oz.toFixed(2)} oz</b> of gold, worth $${gross}. After the $${fee} mill fee, you get <span class="price">$${net}</span>.`;hud();save();
     if(oz/n>.6)once('rich','That was rich ore! Deeper quartz, and quartz with gold streaks in it, is worth the most.');});}
 function nearDoor(){return DOORS.find(d=>Math.hypot(player.x-d.x,player.z-d.z)<2.2&&Math.abs(player.y-SURF)<.6);}
-function interact(){if(riding){dismount();return;}const el=nearElev();if(el){useElev(el);return;}const hn=nearHorse();if(hn&&!nearCannon()){mount(hn);return;}const cn=nearCannon();if(cn){fireCannon(cn);return;}const rt=nearRat();if(rt&&!nearDoor()){feedRat(rt);return;}const d=nearDoor();if(!d)return;if(d.id==='store')openStore();else if(d.id==='saloon')sarsaparilla();else if(d.id==='piano')playPiano();else openMill();}
+function interact(){if(riding){dismount();return;}if(carrying){const el=nearElev();if(el){useElev(el);return;}putDown();return;}const mn=nearMiner();if(mn){minerE(mn);return;}const el=nearElev();if(el){useElev(el);return;}const hn=nearHorse();if(hn&&!nearCannon()){mount(hn);return;}const cn=nearCannon();if(cn){fireCannon(cn);return;}const rt=nearRat();if(rt&&!nearDoor()){feedRat(rt);return;}const d=nearDoor();if(!d)return;if(d.id==='store')openStore();else if(d.id==='saloon')sarsaparilla();else if(d.id==='piano')playPiano();else openMill();}
 
 /* ---------- main loop ---------- */
 const dustGeo=new THREE.CircleGeometry(.45,10),dustMat=new THREE.MeshBasicMaterial({color:0x5a1e14,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false});const crackPool=[];
@@ -1085,7 +1130,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   const fw=(keys.has('w')||keys.has('ArrowUp')?1:0)-(keys.has('s')||keys.has('ArrowDown')?1:0),st=(keys.has('d')?1:0)-(keys.has('a')?1:0);
   if(!locked&&active){if(keys.has('ArrowLeft'))p.yaw+=dt*2.2;if(keys.has('ArrowRight'))p.yaw-=dt*2.2;}
   const bodyWet=water(Math.floor(p.x),Math.floor(p.y+.9),Math.floor(p.z))>.45;
-  const speed=riding?(keys.has('Shift')?13:6.5)*(bodyWet?.6:1):(keys.has('Shift')?6.4:4.3)*(1-.025*G.sack.length)*(bodyWet?.5:1);
+  const speed=riding?(keys.has('Shift')?13:6.5)*(bodyWet?.6:1):(keys.has('Shift')?6.4:4.3)*(1-.025*G.sack.length)*(bodyWet?.5:1)*(carrying?.75:1);
   let mx=0,mz=0;if(active){const sy=Math.sin(p.yaw),cy=Math.cos(p.yaw);mx=(-sy*fw+cy*st);mz=(-cy*fw-sy*st);const l=Math.hypot(mx,mz);if(l>0){mx=mx/l*speed;mz=mz/l*speed;}}
   const lad=!riding&&onLadder();
   if(lad&&active&&(fw>0||keys.has(' ')))p.vy=3.2*(1-.03*G.sack.length);else if(lad&&active&&keys.has('s'))p.vy=-3;else if(lad&&!p.ground)p.vy=Math.max(p.vy-25*dt,-1.2);
@@ -1109,7 +1154,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   else digP=Math.max(0,digP-dt*2);
   ring.style.setProperty('--p',(digP*100).toFixed(0)+'%');ring.hidden=digP<=0;
   objects.forEach(o=>{if(o.type!==DYN)return;o.fuse-=dt;if(Math.random()<dt*30)burst(o.mesh.position.x,o.mesh.position.y,o.mesh.position.z,0xffd37a,1,1.5,{life:.3,g:-2});if(o.fuse<=0)explode(o);});
-  updateCannons(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
+  updateCannons(dt);updateMiners(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
   caveT+=dt;if(caveT>.4){caveCheck(caveT);caveT=0;}
   waterT+=dt;if(waterT>.1){waterTick();waterT=0;}
   wbT+=dt;if(wbT>.25){buildWater();wbT=0;}
@@ -1165,17 +1210,18 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   vig.style.boxShadow=`${blue}${grey}inset 0 0 ${80+redA*120}px ${redA*60}px rgba(160,20,10,${redA})`;
   const door=active&&nearDoor();const pr=$('#prompt');
   const nr=active&&!door&&nearRat();
-  const elP=active&&!riding&&nearElev(),cnP=active&&!door&&!elP&&nearCannon(),hP=active&&!door&&!cnP&&!elP&&(riding||nearHorse());
-  if(elP){pr.innerHTML=`<kbd>E</kbd>${elevLabel(elP)}`;pr.hidden=false;}else if(hP){pr.innerHTML=riding?`<kbd>E</kbd>Get off ${riding.name}`:`<kbd>E</kbd>Ride ${hP.name}`;pr.hidden=false;}else if(door){pr.innerHTML=`<kbd>E</kbd>${door.label}`;pr.hidden=false;}else if(cnP){pr.innerHTML=cnP.cool>0?'Reloading...':'<kbd>E</kbd>Fire the cannon where you look';pr.hidden=false;}
+  const mnP=active&&!riding&&!carrying&&nearMiner();if(mnP){pr.innerHTML=`<kbd>E</kbd>${mnP.state==='down'?'Carry '+mnP.name:'Talk to '+mnP.name}`;pr.hidden=false;}
+  const elP=!mnP&&active&&!riding&&nearElev(),cnP=!mnP&&active&&!door&&!elP&&nearCannon(),hP=active&&!door&&!cnP&&!elP&&(riding||nearHorse());
+  if(mnP){}else if(carrying&&!elP&&active){pr.innerHTML=`<kbd>E</kbd>Put ${carrying.name} down`;pr.hidden=false;}else if(elP){pr.innerHTML=`<kbd>E</kbd>${elevLabel(elP)}`;pr.hidden=false;}else if(hP){pr.innerHTML=riding?`<kbd>E</kbd>Get off ${riding.name}`:`<kbd>E</kbd>Ride ${hP.name}`;pr.hidden=false;}else if(door){pr.innerHTML=`<kbd>E</kbd>${door.label}`;pr.hidden=false;}else if(cnP){pr.innerHTML=cnP.cool>0?'Reloading...':'<kbd>E</kbd>Fire the cannon where you look';pr.hidden=false;}
   else if(nr){pr.innerHTML='<kbd>E</kbd>Give the rat a crumb';pr.hidden=false;}
   else if(target&&target.obj&&active){const o=objects.get(target.i);pr.innerHTML=o&&o.type===DYN?'Fuse is lit!':'Left click to pick it back up';pr.hidden=false;}
   else pr.hidden=true;
   if(toastT>0){toastT-=dt;if(toastT<=0)$('#toast').hidden=true;}
   saveT+=dt;if(saveT>12){saveT=0;save();}
   renderer.render(scene,camera);requestAnimationFrame(frame);}
-init(true);signs();buildTown();buildSaloon();buildRange();buildHorses();buildDecor();resize();
+init(true);signs();buildTown();buildSaloon();setTimeout(()=>spawnMiner([ADIT.x0+6,ADIT.y0,ADIT.z0+1]),0);buildRange();buildHorses();buildDecor();resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-window.__ueg={raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
+window.__ueg={miners:()=>miners,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
 requestAnimationFrame(frame);
 })();
 </script>
