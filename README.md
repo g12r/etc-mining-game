@@ -14,11 +14,11 @@ Play online at https://g12r.github.io/etc-mining-game/, or open `index.html` in 
 | --- | --- |
 | `W` `A` `S` `D` | Walk. Hold `Shift` to run. |
 | Mouse | Look around |
-| Left click | Dig (hold it down), or pick gear back up |
+| Left click | Dig (hold it down), pick gear back up, or shoot the revolver |
 | `R` or right click | Place the item you are holding |
 | `Space` | Jump. Walk into a ladder and hold `W` to climb. |
 | `Q` | Light dynamite where you are looking (or at your feet), then run! You start with 3 sticks. |
-| `1`–`8` | Choose an item |
+| `1`–`9` | Choose an item |
 | `E` | Use the store or mill, feed a rat, or fire a cannon you are standing next to |
 | `Esc` | Pause and get your mouse back |
 
@@ -37,6 +37,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **Rats.** Press `E` next to one to give it a crumb, and it becomes your buddy and follows you. If the rats suddenly run away squeaking, a cave-in is coming!
 - **The town.** You can dig or blast anything in town, but the townsfolk bill you $1 for every board you wreck. The carpenter fixes it after a while. Knock out what holds a building up and it falls down. Chop a tree to get a timber set. Walk inside: the store has a shopkeeper at the counter, and the mill has a working stamp battery, a steam boiler and the assayer.
 - **Cannons.** Put one down with `R` (item 8), stand next to it and press `E`. It aims at whatever your crosshair is on and the ball blows up where it lands.
+- **Revolver.** Item 9. Left click shoots, `R` reloads six shots. Knock the tin cans off the target fence by the store, or set off a lit stick of dynamite from a safe distance.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game

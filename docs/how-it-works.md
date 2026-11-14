@@ -18,7 +18,7 @@ A guide to `src/game.js` for whoever picks this up. Section names below match th
 - `PLANK`, `LOG`, `ROOF` are building blocks. They are in `NONNET`, meaning they are drawn as crisp boxes and are left out of the smooth rock mesh.
 - `ALLOW` is how far a roof of each material spans from a wall before it starts to fail: 2 in dirt, 3 in rock, 4 in hard rock.
 
-Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6`.
+Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6`. The revolver is not an object: it is held, with its loaded rounds in `G.cyl` and spare bullets in `G.pack.revolver`.
 
 ## Sections of game.js
 
@@ -48,6 +48,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | fresh air | Air spreads about 10 blocks from any opening to the sky and from fans. Beyond that the canary goes quiet and the air bar drops. Dynamite smoke counts as bad air. |
 | explosions | Clears a sphere, including hard rock, throws debris, hurts the player if close. |
 | cannons | `fireCannon` raycasts from the camera (ignoring the cannon itself), turns the cannon to the hit point and solves the low ballistic angle for a 34 m/s ball. `updateCannons` moves the balls and calls `explodeAt` on the first solid cell or object they touch. |
+| the revolver | `shoot` raycasts 70 blocks, tests the five tin cans on the target fence first (ray against a small sphere), then the block or object hit. It never removes blocks. A hit on a lit dynamite object sets its fuse to nearly zero. `reload` fills the six-shot cylinder from the spare bullets. Clicking and F call `shoot` instead of digging while item 9 is held. |
 | health | Damage from falls, rocks, drowning, bad air and heat; recovery. |
 | store & mill | The General Store sells gear. The Stamp Mill crushes sacks for $1 each and the assayer pays $20 an ounce. |
 | main loop | Per-frame update and draw. |
