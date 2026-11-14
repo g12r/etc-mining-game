@@ -479,7 +479,7 @@ function windowAt(x,y,z,ry,needs,shutters){const k=kit(),w=1,h=1.1;k.box(TM.winG
   const g=k.done(false);g.position.set(x,y,z);g.rotation.y=ry;scene.add(g);addDecor(g,needs);return g;}
 function shutterPair(x,y,z,needs){const k=kit();for(const s of [-1,1]){const sx=x+s*.75;k.box(TM.paint,.42,1.2,.04,sx,y,z);for(const f of [-.36,0,.36])k.box(TM.paint,.42,.05,.03,sx,y+f,z+.03);}piece(k,needs);}
 function person(shirt,opts){const k=kit();
-  for(const s of [-1,1]){k.cyl(TM.pants,.085,.075,.8,s*.1,.42,0);k.box(TM.black,.13,.08,.25,s*.1,.04,.04);}
+  if(!opts.nolegs)for(const s of [-1,1]){k.cyl(TM.pants,.085,.075,.8,s*.1,.42,0);k.box(TM.black,.13,.08,.25,s*.1,.04,.04);}
   k.cyl(shirt,.2,.23,.66,0,1.13,0);if(opts.apron)k.box(TM.white,.36,.62,.03,0,1.0,.215);if(opts.vest){k.cyl(TM.black,.21,.225,.44,0,1.24,0);k.box(shirt,.07,.42,.02,0,1.24,.218);k.box(TM.black,.08,.04,.02,0,1.43,.225);}
   for(const s of [-1,1]){k.cyl(shirt,.065,.055,.58,s*.27,1.13,.02,0,0,s*.12);k.ball(skinM,.06,s*.31,.82,.05);}
   k.cyl(skinM,.06,.06,.12,0,1.49,0);k.ball(skinM,.14,0,1.64,0,1,1.1,1);k.box(TM.black,.13,.035,.03,0,1.585,.135);for(const s of [-1,1])k.ball(TM.black,.02,s*.05,1.67,.13);
@@ -814,12 +814,13 @@ $('#resetBtn').addEventListener('click',()=>{const b=$('#resetBtn');if(!b.datase
 
 /* ---------- raycast (against the solid cells the smooth rock is built on) ---------- */
 const dirV=new THREE.Vector3();
-function raycast(max){camera.getWorldDirection(dirV);return rayFrom(camera.position,dirV,max);}
-function rayFrom(o,dirV,max){let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
+// shot=true: bullets fly through the gaps in timber sets and ladders
+function raycast(max,shot){camera.getWorldDirection(dirV);return rayFrom(camera.position,dirV,max,shot);}
+function rayFrom(o,dirV,max,shot){let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
   const sx=Math.sign(dirV.x),sy=Math.sign(dirV.y),sz=Math.sign(dirV.z);const tdx=Math.abs(1/dirV.x),tdy=Math.abs(1/dirV.y),tdz=Math.abs(1/dirV.z);
   let tx=sx>0?(x+1-o.x)*tdx:(o.x-x)*tdx,ty=sy>0?(y+1-o.y)*tdy:(o.y-y)*tdy,tz=sz>0?(z+1-o.z)*tdz:(o.z-z)*tdz;let nx=0,ny=0,nz=0,t=0;
   if(isNaN(tx))tx=Infinity;if(isNaN(ty))ty=Infinity;if(isNaN(tz))tz=Infinity;
-  for(let s=0;s<80;s++){if(s>0&&inB(x,y,z)){const i=idx(x,y,z);if(W[i]!==AIR||objects.has(i))return {x,y,z,nx,ny,nz,i,obj:W[i]===AIR};}
+  for(let s=0;s<80;s++){if(s>0&&inB(x,y,z)){const i=idx(x,y,z);if(W[i]!==AIR||(objects.has(i)&&!(shot&&(objects.get(i).type===TIMBER||objects.get(i).type===LADDER))))return {x,y,z,nx,ny,nz,i,obj:W[i]===AIR};}
     if(tx<ty&&tx<tz){t=tx;x+=sx;tx+=tdx;nx=-sx;ny=0;nz=0;}else if(ty<tz){t=ty;y+=sy;ty+=tdy;nx=0;ny=-sy;nz=0;}else{t=tz;z+=sz;tz+=tdz;nx=0;ny=0;nz=-sz;}
     if(t>max)return null;}return null;}
 
@@ -942,7 +943,7 @@ function airAt(x,y,z){if(!inB(x,y,z))return 0;const i=idx(x,y,z);if(!openSet.has
 
 /* ---------- explosions ---------- */
 function explode(o){const [cx,cy,cz]=cellXYZ(o.i);removeObject(o.i);explodeAt(cx,cy,cz);}
-function explodeAt(cx,cy,cz){const R=2.7;for(const b of bandits)if(b.state!=='flee'&&Math.hypot(b.x-cx,b.z-cz)<7){b.state='flee';b.yell=1;}
+function explodeAt(cx,cy,cz){const R=2.7;for(const b of bandits)if(b.state!=='flee'&&Math.hypot(b.x-cx,b.z-cz)<7){b.state='flee';b.yell=1;}for(const m of miners.slice()){const md=Math.hypot(m.x-cx-.5,m.y+.8-cy-.5,m.z-cz-.5);if(md<5)hurtMiner(m,95*(1-md/5));}
   for(let x=cx-3;x<=cx+3;x++)for(let y=cy-3;y<=cy+3;y++)for(let z=cz-3;z<=cz+3;z++){if(!inB(x,y,z))continue;const d=Math.hypot(x-cx,y-cy,z-cz);if(d>R)continue;
     const i=idx(x,y,z);const ob=objects.get(i);if(ob&&ob.type!==DYN)removeObject(i);const t=W[i];if(!t||t===BED)continue;
     setBlock(x,y,z,AIR);if(t===QUARTZ||t===RICH)spawnItem(x+.5,y+.5,z+.5,oreGrade(t,y,x,z));if(Math.random()<.4)burst(x+.5,y+.5,z+.5,COLOR[t],3,8);}
@@ -966,7 +967,7 @@ const balls=[];const ballGeo=new THREE.SphereGeometry(.12,12,10);
 function nearCannon(){let best=null,bd=1.9;objects.forEach(o=>{if(o.type!==CANNON)return;const [x,y,z]=cellXYZ(o.i);const d=Math.hypot(x+.5-player.x,z+.5-player.z);if(d<bd&&Math.abs(y-player.y)<1.6){bd=d;best=o;}});return best;}
 // the cannon turns to what the crosshair is on and lifts its barrel just enough for the ball's arc to land there
 function fireCannon(o){if(o.cool>0){toast('Still reloading...',1000);return;}const p=player,[x,y,z]=cellXYZ(o.i),sp=34,g=9.8;let yaw=p.yaw,el=Math.max(-.2,Math.min(.9,p.pitch))+.06;
-  objects.delete(o.i);const h=raycast(100);objects.set(o.i,o);
+  objects.delete(o.i);const h=raycast(100,true);objects.set(o.i,o);
   if(h){const tx=h.x+.5+h.nx*.5,ty=h.y+.5+h.ny*.5,tz=h.z+.5+h.nz*.5,dx=tx-x-.5,dz=tz-z-.5,d=Math.hypot(dx,dz),dh=ty-y-.58;
     if(Math.hypot(d,dh)<5){toast("Too close! Aim farther away, or the blast will get you too.",2400,true);return;}
     yaw=Math.atan2(-dx,-dz);const disc=sp**4-g*(g*d*d+2*dh*sp*sp);el=disc>=0?Math.atan((sp*sp-Math.sqrt(disc))/(g*d)):Math.PI/4;}
@@ -989,10 +990,10 @@ function shoot(){if(G.gun==='shotgun'){shootShotgun();return;}if(gunCool>0||!sta
   if(G.cyl<=0){tone(900,.04,.08,'square');toast(G.pack.revolver>0?'Click! Empty. Press R to reload.':'Click! Out of bullets. Buy a box at the General Store.',2200,true);gunCool=.25;return;}
   G.cyl--;gunCool=.38;gunKick=1;renderHotbar();noise(.16,4500,.9,6);noise(.7,650,.55,2.5);flash.position.copy(camera.position);flash.intensity=2.2;
   const gp=new THREE.Vector3();gunG.userData.drum.getWorldPosition(gp);burst(gp.x+dirV.x*.3,gp.y+dirV.y*.3,gp.z+dirV.z*.3,0xffd27a,4,2,{life:.08,g:0});
-  const h=raycast(70),o=camera.position,d=dirV;let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):70,best=null;
+  const h=raycast(70,true),o=camera.position,d=dirV;let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):70,best=null;
   for(const c of cans){if(c.down||!c.m.visible)continue;const v=c.m.position.clone().sub(o),t=v.dot(d);if(t<0||t>bt)continue;if(v.lengthSq()-t*t<.15*.15){best=c;bt=t;}}
   if(best){knockCan(best,d);return;}
-  {const bh=banditHit(o,d,bt);if(bh){hitBandit(bh);return;}}
+  {const bh=banditHit(o,d,bt);if(bh){hitBandit(bh);return;}const mh=minerHit(o,d,bt);if(mh){hurtMiner(mh,35);return;}}
   if(!h){once('gun',"Bang! Shoot the tin cans on the fence by the store, or a lit stick of dynamite from far away. Bullets chip rock but can't dig it.");return;}
   const hx=h.x+.5+h.nx*.52,hy=h.y+.5+h.ny*.52,hz=h.z+.5+h.nz*.52;
   if(h.obj){const ob=objects.get(h.i);if(ob&&ob.type===DYN){ob.fuse=Math.min(ob.fuse,.05);toast('You shot the dynamite!',1500,true);}else tone(1900,.18,.08,'triangle',1300);return;}
@@ -1172,10 +1173,10 @@ function shootShotgun(){if(gunCool>0||!started||panel)return;
   {const gp=new THREE.Vector3();shotG.getWorldPosition(gp);burst(gp.x+base.x*.7,gp.y+base.y*.7,gp.z+base.z*.7,0xffd27a,8,3,{life:.1,g:0});}
   const onBandit=new Map();
   for(let k=0;k<9;k++){const d=base.clone();if(k){const a=Math.random()*6.283,r=Math.sqrt(Math.random())*.075;d.addScaledVector(right,Math.cos(a)*r).addScaledVector(up,Math.sin(a)*r).normalize();}
-    const h=rayFrom(o,d,32);let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):32,can=null;
+    const h=rayFrom(o,d,32,true);let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):32,can=null;
     for(const c of cans){if(c.down||!c.m.visible)continue;const v=c.m.position.clone().sub(o),t=v.dot(d);if(t<0||t>bt)continue;if(v.lengthSq()-t*t<.15*.15){can=c;bt=t;}}
     if(can){knockCan(can,d);continue;}
-    const bh=banditHit(o,d,bt);if(bh){onBandit.set(bh,(onBandit.get(bh)||0)+1);continue;}
+    const bh=banditHit(o,d,bt);if(bh){onBandit.set(bh,(onBandit.get(bh)||0)+1);continue;}const mh=minerHit(o,d,bt);if(mh){hurtMiner(mh,12);continue;}
     if(!h)continue;
     if(h.obj){const ob=objects.get(h.i);if(ob&&ob.type===DYN){ob.fuse=Math.min(ob.fuse,.05);toast('You shot the dynamite!',1500,true);}continue;}
     const t=W[h.i],hx=h.x+.5+h.nx*.52,hy=h.y+.5+h.ny*.52,hz=h.z+.5+h.nz*.52;if(k===0)goldPop(t,h.x,h.y,h.z,hx,hy,hz);
@@ -1188,7 +1189,8 @@ function reloadShotgun(){const need=9-G.sh;if(need<=0){toast('Fully loaded: 9 sh
   toast('Reloading...',900);renderHotbar();}
 /* ---------- miners: they work down in the mine, but their health is poor. When one collapses, find him and carry him up into the open air ---------- */
 const miners=[],MINER_NAMES=['Old Jim','Cousin Jack','Hank','Lefty','Ike','Big Sam','Dutch','Whitey'];let minerT=110,carrying=null,minerN=0;
-function minerMesh(i){const g=new THREE.Group(),body=person([TM.blue,TM.red,TM.green,TM.cloth][i%4],{nohat:true});g.add(body);const k=kit();
+function minerMesh(i){const g=new THREE.Group(),body=person([TM.blue,TM.red,TM.green,TM.cloth][i%4],{nohat:true,nolegs:true});g.add(body);const k=kit();
+  const legs=[];for(const s of [-1,1]){const hip=new THREE.Group();hip.position.set(s*.1,.82,0);g.add(hip);const l=new THREE.Mesh(new THREE.CylinderGeometry(.085,.075,.8,10),TM.pants);l.position.y=-.4;l.castShadow=true;hip.add(l);const bt=new THREE.Mesh(new THREE.BoxGeometry(.13,.08,.25),TM.black);bt.position.set(0,-.78,.04);hip.add(bt);legs.push(hip);}g.userData.legs=legs;
   k.ball(TM.dark,.165,0,1.75,0,1,.62,1.05);k.cyl(TM.dark,.21,.21,.02,0,1.72,.02,0,0,0,16);k.cyl(TM.brass,.035,.04,.07,0,1.79,.17,Math.PI/2);
   k.cyl(MAT_TOWN_WOOD,.02,.02,.7,.31,1.02,.2,.5,0,0);k.cyl(steelM,.016,.025,.4,.31,1.33,.37,0,0,Math.PI/2);g.add(k.done(true));
   const lamp=glowSprite(0xffd28a,.35);lamp.position.set(0,1.79,.22);g.add(lamp);return g;}
@@ -1199,6 +1201,11 @@ function minerSpot(){const p=player,list=openArr||[];let best=null,bd=1e9;
 function spawnMiner(at){const s=at||minerSpot();if(!s)return null;const i=minerN++,m=minerMesh(i);scene.add(m);
   const el=document.createElement('div');el.className='npc';$('.hud').appendChild(el);
   const mn={m,el,x:s[0]+.5,y:s[1],z:s[2]+.5,yaw:Math.random()*6.28,hp:45+Math.random()*25,name:MINER_NAMES[i%MINER_NAMES.length],state:'work',ph:Math.random()*6,coughT:3+Math.random()*5};miners.push(mn);return mn;}
+function minerHit(o,d,maxT){let best=null,bt=maxT;for(const m of miners){if(m.state==='carried'||m.state==='ko')continue;const lying=m.state==='down';
+    for(const hy of lying?[.25]:[.55,1.1,1.6]){const c=new THREE.Vector3(m.x,m.y+hy,m.z).sub(o),t=c.dot(d);if(t<0||t>bt)continue;if(c.lengthSq()-t*t<(lying?.5:.3)**2){best=m;bt=t;}}}return best;}
+function hurtMiner(m,dmg){if(m.state==='carried'||m.state==='ko')return;m.hp-=dmg;for(let k=0;k<2;k++)setTimeout(()=>tone(420-k*90,.12,.07,'sawtooth',300),k*110);burst(m.x,m.y+1.1,m.z,0x9a7a5a,5,2,{life:.4});
+  if(m.hp<=0){m.state='ko';m.koT=0;m.hp=0;}else if(m.state==='work'&&m.hp>20)toast(`${m.name}: "OW! Hey, watch it!"`,1600,true);}
+function blocksWalk(x,y,z){const o=inB(x,y,z)&&objects.get(idx(x,y,z));return !!o&&o.type!==TIMBER&&o.type!==LADDER;}
 function nearMiner(){let best=null,bd=1.9;for(const m of miners){if(m===carrying)continue;const d=Math.hypot(m.x-player.x,m.z-player.z);if(d<bd&&Math.abs(m.y-player.y)<1.6){bd=d;best=m;}}return best;}
 function cough(m,d){const v=Math.max(.02,.12*(1-d/16));noise(.12,700,v,2);setTimeout(()=>noise(.14,600,v*.9,2),200);}
 function minerE(m){if(m.state==='down'){carrying=m;m.state='carried';tone(300,.15,.06,'triangle',220);toast(`You've got ${m.name}! Get him up into the open air, above ground. (E puts him down.)`,3600);return;}
@@ -1207,17 +1214,27 @@ function minerE(m){if(m.state==='down'){carrying=m;m.state='carried';tone(300,.1
 function putDown(){const m=carrying;carrying=null;m.state='down';m.x=player.x-Math.sin(player.yaw)*.8;m.z=player.z-Math.cos(player.yaw)*.8;m.y=groundBelow(m.x,player.y+.5,m.z);toast(`You put ${m.name} down.`,1500);}
 function dropMiner(i){const m=miners[i];scene.remove(m.m);m.el.parentNode&&m.el.parentNode.removeChild(m.el);miners.splice(i,1);if(carrying===m)carrying=null;}
 function updateMiners(dt){const p=player,onTop=p.y>=Hc(Math.floor(p.x),Math.floor(p.z))-.5&&under<.4;
-  if(started&&!panel){minerT-=dt;if(minerT<=0){minerT=90+Math.random()*60;if(miners.filter(m=>m.state!=='carried').length<3){const m=spawnMiner();if(m&&Math.hypot(m.x-p.x,m.z-p.z)<20)toast(`${m.name} came down to work in your mine.`,2200);}}}
+  if(started&&!panel){minerT-=dt;if(minerT<=0){minerT=90+Math.random()*60;if(!miners.length){const m=spawnMiner();if(m&&Math.hypot(m.x-p.x,m.z-p.z)<20)toast(`${m.name} came down to work in your mine.`,2200);}}}
   const w=stage.clientWidth,h=stage.clientHeight,v=new THREE.Vector3();let hurtOne=null;
   for(let i=miners.length-1;i>=0;i--){const m=miners[i],cx=Math.floor(m.x),cy=Math.floor(m.y+.2),cz=Math.floor(m.z),d=Math.hypot(m.x-p.x,m.y-p.y,m.z-p.z);
     if(m.state==='work'){let rate=.1;if(airAt(cx,cy+1,cz)>10)rate+=1.2;if(water(cx,cy+1,cz)>.45)rate+=5;if(solid(cx,cy,cz)||solid(cx,cy+1,cz))rate+=8;
       for(const f of falling)if(!f.hitMiner&&Math.abs(f.x+.5-m.x)<1&&Math.abs(f.z+.5-m.z)<1&&f.y<m.y+2&&f.y>m.y-.5){f.hitMiner=1;m.hp-=35;}
       m.hp-=rate*dt;const gy=groundBelow(m.x,m.y+.3,m.z);if(gy<m.y-.05)m.y=Math.max(gy,m.y-dt*8);
       if(m.hp<60){m.coughT-=dt;if(m.coughT<=0){m.coughT=4+Math.random()*6;if(d<16)cough(m,d);}}
-      if(d<6){const want=Math.atan2(p.x-m.x,p.z-m.z);m.yaw+=Math.atan2(Math.sin(want-m.yaw),Math.cos(want-m.yaw))*Math.min(1,dt*3);}
+      let walking=false;
+      if(d<2.6){const want=Math.atan2(p.x-m.x,p.z-m.z);m.yaw+=Math.atan2(Math.sin(want-m.yaw),Math.cos(want-m.yaw))*Math.min(1,dt*3);}
+      else if(m.tx==null){m.restT=(m.restT||0)-dt;if(m.restT<=0){m.restT=2+Math.random()*4;const fy=Math.round(m.y);for(let k=0;k<10;k++){const nx=cx+Math.floor(Math.random()*9)-4,nz=cz+Math.floor(Math.random()*9)-4;
+          if((nx!==cx||nz!==cz)&&inB(nx,fy+1,nz)&&W[idx(nx,fy,nz)]===AIR&&solid(nx,fy-1,nz)&&water(nx,fy,nz)<.3&&W[idx(nx,fy+1,nz)]===AIR&&!blocksWalk(nx,fy,nz)){m.tx=nx+.5;m.tz=nz+.5;break;}}}}
+      else{const dx=m.tx-m.x,dz=m.tz-m.z,dd=Math.hypot(dx,dz);if(dd<.15){m.tx=null;}else{const want=Math.atan2(dx,dz);m.yaw+=Math.atan2(Math.sin(want-m.yaw),Math.cos(want-m.yaw))*Math.min(1,dt*6);
+          const sp=(m.hp>40?1.3:.8)*dt,nx=m.x+Math.sin(m.yaw)*sp,nz=m.z+Math.cos(m.yaw)*sp,ncx=Math.floor(nx),ncz=Math.floor(nz),fy=Math.round(m.y);
+          const blocked=(solid(ncx,fy,ncz)&&(solid(ncx,fy+1,ncz)||solid(ncx,fy+2,ncz)))||solid(ncx,fy+1,ncz)||groundBelow(nx,m.y+1.2,nz)<m.y-1.2||blocksWalk(ncx,fy,ncz);
+          if(blocked||(m.walkT=(m.walkT||0)+dt)>8){m.tx=null;m.walkT=0;}else{m.x=nx;m.z=nz;const gy=groundBelow(m.x,m.y+1.2,m.z);m.y+=(gy-m.y)*Math.min(1,dt*12);walking=true;}}}
+      m.m.userData.legs.forEach((L,k)=>{L.rotation.x=walking?Math.sin(time*7+m.ph+k*Math.PI)*.45:L.rotation.x*.8;});m.walking=walking;
       if(m.hp<=20){m.state='down';m.hp=20;for(let k=0;k<3;k++)setTimeout(()=>tone(520-k*40,.25,.06,'sawtooth',380),k*300);
         toast(`HELP! ${m.name} collapsed in the mine! Find him and carry him out into the fresh air (press E next to him).`,4800,true);}
-      m.m.rotation.set(Math.sin(time*4+m.ph)*.07*(m.hp>35?1:.3),m.yaw,0);m.m.position.set(m.x,m.y+.05,m.z);}
+      m.m.rotation.set(m.walking?0:Math.sin(time*4+m.ph)*.07*(m.hp>35?1:.3),m.yaw,0);m.m.position.set(m.x,m.y+.05+(m.walking?Math.abs(Math.sin(time*7+m.ph))*.04:0),m.z);}
+    else if(m.state==='ko'){m.koT+=dt;m.m.rotation.set(-Math.PI/2,m.yaw,0);m.m.position.set(m.x,m.y+.18,m.z);
+      if(m.koT>2.5){const fine=Math.min(500,G.money);G.money-=fine;hud();toast(`You knocked out ${m.name}! The sheriff fines you $${fine}, and the doctor takes him away.`,4200,true);dropMiner(i);continue;}}
     else if(m.state==='down'){m.hp-=.22*dt;hurtOne=hurtOne||m;const gy=groundBelow(m.x,m.y+.3,m.z);if(gy<m.y-.05)m.y=Math.max(gy,m.y-dt*8);
       m.m.rotation.set(-Math.PI/2,m.yaw,0);m.m.position.set(m.x,m.y+.18,m.z);
       if(m.hp<=0){toast(`${m.name} passed out before you got to him. The other miners carried him up to the doctor.`,4200,true);dropMiner(i);continue;}}
@@ -1228,7 +1245,7 @@ function updateMiners(dt){const p=player,onTop=p.y>=Hc(Math.floor(p.x),Math.floo
     const show=m.state!=='carried'&&d<14&&Math.abs(m.y-p.y)<6;m.el.style.display=show?'block':'none';
     if(show){v.set(m.x,m.y+(m.state==='down'?.75:2.15),m.z).project(camera);if(v.z>1){m.el.style.display='none';continue;}
       m.el.style.left=((v.x+1)/2*w)+'px';m.el.style.top=((1-v.y)/2*h)+'px';const col=m.hp>50?'#8fd16a':m.hp>30?'#f2b33d':'#ff8f73';
-      m.el.className='npc'+(m.state==='down'?' down':'');m.el.innerHTML=`${m.state==='down'?'HELP! ':''}${m.name}<i><b style="width:${Math.max(0,m.hp)}%;background:${col}"></b></i>`;}}
+      m.el.className='npc'+(m.state==='down'||m.state==='ko'?' down':'');m.el.innerHTML=`${m.state==='down'?'HELP! ':m.state==='ko'?'KNOCKED OUT ':''}${m.name}<i><b style="width:${Math.max(0,m.hp)}%;background:${col}"></b></i>`;}}
   const chip=$('#hMiner');if(hurtOne){chip.hidden=false;const dd=Math.round(Math.hypot(hurtOne.x-p.x,hurtOne.z-p.z)),down=Math.max(0,Math.round((SURF-hurtOne.y)*5));
     chip.querySelector('b').textContent=hurtOne.state==='carried'?`carrying ${hurtOne.name} · get to the surface`:`${hurtOne.name} · ${dd} m away${down>0?', '+down+' ft down':''}`;}else chip.hidden=true;}
 /* ---------- health ---------- */
@@ -1367,7 +1384,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   renderer.render(scene,camera);requestAnimationFrame(frame);}
 init(true);signs();buildTown();buildSaloon();setTimeout(()=>spawnMiner([ADIT.x0+6,ADIT.y0,ADIT.z0+1]),0);buildRange();buildHorses();buildDecor();resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-window.__ueg={miners:()=>miners,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
+window.__ueg={miners:()=>miners,hurtMiner,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
 requestAnimationFrame(frame);
 })();
 </script>
