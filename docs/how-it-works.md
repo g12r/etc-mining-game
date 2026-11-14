@@ -18,7 +18,7 @@ A guide to `src/game.js` for whoever picks this up. Section names below match th
 - `PLANK`, `LOG`, `ROOF` are building blocks. They are in `NONNET`, meaning they are drawn as crisp boxes and are left out of the smooth rock mesh.
 - `ALLOW` is how far a roof of each material spans from a wall before it starts to fail: 2 in dirt, 3 in rock, 4 in hard rock.
 
-Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6`. The revolver is not an object: it is held, with its loaded rounds in `G.cyl` and spare bullets in `G.pack.revolver`.
+Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6, ELEV 7`. The revolver is not an object: it is held, with its loaded rounds in `G.cyl` and spare bullets in `G.pack.revolver`.
 
 ## Sections of game.js
 
@@ -50,6 +50,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | cannons | `fireCannon` raycasts from the camera (ignoring the cannon itself), turns the cannon to the hit point and solves the low ballistic angle for a 34 m/s ball. `updateCannons` moves the balls and calls `explodeAt` on the first solid cell or object they touch. |
 | the revolver | `shoot` raycasts 70 blocks, tests the five tin cans on the target fence first (ray against a small sphere), then the block or object hit. It never removes blocks. A hit on a lit dynamite object sets its fuse to nearly zero. `goldPop` floats the block's gold above the hit point; `oreGrade(t,y,x,z)` is fixed per block so the reading matches what digging gives. `reload` fills the six-shot cylinder from the spare bullets. Clicking and F call `shoot` instead of digging while item 9 is held. |
 | horses | `G.horses` holds each horse's place and is saved. `riding` is the horse you are on: the player's capsule does the moving, speed goes up, the camera rises a metre, and `updateHorses` puts the horse under you and animates the legs from its speed (trot pairs, then a gallop). Idle horses settle onto the ground below them, so they never float. |
+| mine elevators | `sinkShaft` levels a 2x2 spot, clears the shaft 12 blocks down and a station tunnel at the bottom, and returns the elevator's `set` (shaft corner, top, bottom), which is saved with the object. The cage height `o.cy` is not saved; it starts at the top. `cageHold` runs right after the player's physics and stands the player on the cage floor; landing on it from a fall still hurts. `shaftBottom` is worked out from the grid each time, so digging the shaft deeper lets the cage go deeper. |
 | health | Damage from falls, rocks, drowning, bad air and heat; recovery. |
 | store & mill | The General Store sells gear. The Stamp Mill crushes sacks for $1 each and the assayer pays $20 an ounce. |
 | main loop | Per-frame update and draw. |

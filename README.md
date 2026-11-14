@@ -18,8 +18,8 @@ Play online at https://g12r.github.io/etc-mining-game/, or open `index.html` in 
 | `R` or right click | Place the item you are holding |
 | `Space` | Jump. Walk into a ladder and hold `W` to climb. |
 | `Q` | Light dynamite where you are looking (or at your feet), then run! You start with 3 sticks. |
-| `1`–`9` | Choose an item |
-| `E` | Use the store or mill, feed a rat, fire a cannon, or get on and off a horse |
+| `1`–`9`, `0` | Choose an item |
+| `E` | Use the store or mill, feed a rat, fire a cannon, get on and off a horse, or work the elevator |
 | `Esc` | Pause and get your mouse back |
 
 If the mouse will not lock, drag to look and use `F` to dig.
@@ -40,6 +40,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **Revolver.** Item 9. Left click shoots, `R` reloads six shots. Knock the tin cans off the target fence by the store, or set off a lit stick of dynamite from a safe distance.
 - **Horses.** Nugget, Midnight and Dusty are tied up east of the store. Press `E` to ride, hold `Shift` to gallop.
 - **Shoot to assay.** Shoot a rock and the gold in it pops up on screen.
+- **Mine elevator.** Item 0. Put it down and the crew sinks a 60-foot shaft with a headframe and cage. Step in and press `E`.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game
