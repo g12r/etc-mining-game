@@ -41,6 +41,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .chip{background:rgba(12,10,8,.78);border:1px solid var(--line);border-radius:999px;padding:2px 11px;font-size:1rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .chip b{color:var(--fg);font-weight:700;margin-left:4px}
 .chip.money b{color:var(--ok)}
+.chip.raid{border-color:var(--warn);color:var(--warn)} .chip.raid b{color:var(--warn)}
 .chip.bird b{color:var(--gold)} .chip.bird.bad{border-color:var(--warn);color:var(--warn)} .chip.bird.bad b{color:var(--warn)}
 .bars{position:absolute;left:10px;bottom:12px;display:flex;flex-direction:column;gap:5px;width:min(220px,30%)}
 .bar{display:grid;grid-template-columns:52px 1fr;gap:6px;align-items:center;font-size:.9rem;color:var(--fg);text-shadow:0 1px 2px #000}
@@ -95,7 +96,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <div class="vignette" id="vig"></div>
       <div class="cross"></div>
       <div class="ring" id="ring" hidden></div>
-      <div class="tl"><span class="chip money">Cash<b id="hMoney">$100,000,000</b></span><span class="chip">Ore sacks<b id="hSack">0/8</b></span><span class="chip">Rock<b id="hRock">0</b></span></div>
+      <div class="tl"><span class="chip money">Cash<b id="hMoney">$100,000,000</b></span><span class="chip">Ore sacks<b id="hSack">0/8</b></span><span class="chip">Rock<b id="hRock">0</b></span><span class="chip raid" id="hWave" hidden>Bandits<b></b></span></div>
       <div class="tr"><span class="chip bird" id="hBird">Canary<b>singing</b></span><span class="chip">Temp<b id="hTemp">70°F</b></span><span class="chip">Depth<b id="hDepth">0 ft</b></span></div>
       <div class="bars">
         <div class="bar">Health<i id="bHealth" style="--c:#e0503a"></i></div>
