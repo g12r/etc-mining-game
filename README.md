@@ -43,10 +43,11 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **Mine elevator.** Item 0. Put it down and the crew sinks a 60-foot shaft with a headframe and cage. Step in and press `E`.
 - **The saloon.** Across from the stamp mill. Press `E` at the bar for a sarsaparilla that fills your health, or at the piano to play a tune.
 - **Bandits.** The Black Hat Gang raids in three waves every few minutes, with Black Bart in the last one. Shoot a bandit twice (Bart four times) and he gives up, drops what he stole and a reward.
-- **Shotgun.** Press `9` twice. A 9-shot pump shotgun, great for bandits up close. `R` reloads.
+- **Shotgun.** Press `9` twice. A 9-shot lever-action shotgun, great for bandits up close. `R` reloads.
 - **Miners.** A miner walks around and works in your mine, but his health is poor. Don't shoot him: the sheriff fines you. When one collapses, find him, press `E` to pick him up and carry him out into the open air.
 - **The second street.** North of the saloon: the sheriff and jail, the bank, the doctor (heals you for $5) and the blacksmith (a steel pick for $150).
 - **Musket.** Press `9` three times. One huge shot, then a slow reload with `R`.
+- **The railroad.** A steam train runs a loop around the claim and stops at EMMETT DEPOT by town. Press `E` near it to ride, `E` to hop off. Stay off the tracks!
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game
