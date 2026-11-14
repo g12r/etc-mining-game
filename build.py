@@ -3,10 +3,12 @@
 
     python3 build.py
 
-Writes two files:
+Writes three files:
 
   index.html     The game as one self-contained page. The 3D engine (three.js)
                  is copied inside it, so it runs with no internet connection.
+  releases/index.html
+                 The same page, in the folder GitHub Pages publishes from.
   artifact.html  The same game for publishing as a Claude artifact. It has no
                  page wrapper and loads three.js from a CDN instead.
 """
@@ -34,6 +36,9 @@ page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
 
 with open(os.path.join(ROOT, 'index.html'), 'w', encoding='utf-8') as f:
     f.write(page)
+os.makedirs(os.path.join(ROOT, 'releases'), exist_ok=True)
+with open(os.path.join(ROOT, 'releases', 'index.html'), 'w', encoding='utf-8') as f:
+    f.write(page)
 with open(os.path.join(ROOT, 'artifact.html'), 'w', encoding='utf-8') as f:
     f.write(head + game)
-print('built index.html (%d bytes) and artifact.html (%d bytes)' % (len(page), len(head) + len(game)))
+print('built index.html and releases/index.html (%d bytes) and artifact.html (%d bytes)' % (len(page), len(head) + len(game)))

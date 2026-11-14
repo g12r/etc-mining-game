@@ -6,7 +6,7 @@ Designed by Emmett. Built with Claude.
 
 ## Play
 
-Open `index.html` in a browser. It is one self-contained page and needs no internet. Turn your sound on. Your mine saves in that browser.
+Play online at https://g12r.github.io/etc-mining-game/, or open `index.html` in a browser. It is one self-contained page and needs no internet. Turn your sound on. Your mine saves in that browser.
 
 ## Controls
 

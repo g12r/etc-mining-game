@@ -30,6 +30,7 @@ A realistic 3D gold mine game, designed by Emmett and built by Claude. This file
 | `vendor/three.min.js` | three.js r128, copied into the standalone page. |
 | `build.py` | Joins the above into the two pages below. |
 | `index.html` | Built. The game as one page that runs with no internet. This is what a player opens. |
+| `releases/index.html` | Built. A copy of `index.html` that GitHub Pages publishes at https://g12r.github.io/etc-mining-game/ on every push to `main` (`.github/workflows/pages.yml`). |
 | `artifact.html` | Built. The same game without a page wrapper, for publishing as a Claude artifact. |
 | `tests/smoke.js` | Loads the built page headless and checks the 3D world starts with no errors. |
 
