@@ -4,7 +4,7 @@ A guide to `src/game.js` for whoever picks this up. Section names below match th
 
 ## The big picture
 
-- **Engine:** three.js r128, one `<canvas>` inside `#stage`, first-person camera with pointer lock. If the mouse will not lock, the player can drag to look, F digs and R places.
+- **Engine:** three.js r128, one `<canvas>` inside `#stage`, first-person camera with pointer lock. If the mouse will not lock, the player can drag to look and F digs. R places whether or not the mouse is locked.
 - **World:** a 64 × 64 × 64 grid of blocks (`X`, `Y`, `Z`), stored in `W` as one byte per block. Ground level is `SURF = 40`; `BASE = SURF - 1`. Depth in feet is `(BASE - y) * 5`.
 - **It does not look like blocks.** The grid is only the data. What you see is a smooth mesh built from it (see "smooth rock mesh").
 - **Debug handle:** `window.__ueg` exposes the player, game state `G`, the world arrays, `setBlock`, `breakBlock`, `addObject`, `rats`, `openStore`, `openMill`, `save` and more. Tests use it to set up a situation instead of playing to it.
@@ -37,7 +37,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | state | `G` (money, sacks, gear, flags) and the save and load code. |
 | objects | Placing and removing ladders, timber sets, pumps, fans, dynamite. |
 | HUD | Money, sacks, the rock you are facing, the canary, temperature, depth, and the health, air and heat bars. |
-| input | Keys, mouse, pointer lock, hotbar 1 to 7, Q for dynamite, E to use. |
+| input | Keys, mouse, pointer lock, hotbar 1 to 7, Q for dynamite, R to place, E to use. |
 | raycast | Finds the block the player is looking at. It tests the solid grid cells, not the smooth mesh. |
 | player physics | A 0.3-wide, 1.7-tall capsule against the grid: walking, jumping, ladders, swimming. |
 | actions | Digging, placing, lighting dynamite (`throwDynamite` falls back to dropping it at your feet). |
@@ -65,6 +65,7 @@ Saved to `localStorage` under `ueg-save-v3`: the block grid, the height map, tre
 - **A giant pickaxe filling the screen.** The held tool needed scaling down and moving to the lower right.
 - **`smoothstep` with its edges the wrong way round.** GLSL does not define it when the first edge is larger. Use `1.0 - smoothstep(a, b, x)` with `a < b`.
 - **Q did nothing.** See request 8: no dynamite in the pack, an aim that had to be exact, and a protected town. Any one of those reads to a player as "the key is broken".
+- **R did nothing.** Request 11. R placed things already, but did nothing and said nothing when he held the pickaxe, had none of the item, or aimed at the sky. Now `placeAction` always places (falling back to the spot in front of his feet) or shows why not.
 - **Floating buildings.** Blasting under the town left it hanging until the support checks were added.
 
 ## When he says it's broken

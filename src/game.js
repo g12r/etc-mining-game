@@ -505,12 +505,19 @@ function throwDynamite(){if(!started||panel)return;
     for(const c of [[fx,fy,fz],[Math.floor(p.x),fy,Math.floor(p.z)],[Math.floor(p.x),fy+1,Math.floor(p.z)]])if(inB(...c)&&get(...c)===AIR&&!objects.has(idx(...c))){cell=c;break;}}
   if(!cell){toast('No room to put the dynamite here.');return;}
   addObject(idx(cell[0],cell[1],cell[2]),DYN);G.pack.dyn--;SFX.hiss();SFX.place();toast('Fuse lit! RUN! Get at least 4 steps away!',2500,true);hud();renderHotbar();}
-function placeAction(){if(!started||panel)return;const it=ITEMS[G.sel];if(it.id==='tool')return;const h=raycast(4.8);if(!h||h.obj)return;
-  const x=h.x+h.nx,y=h.y+h.ny,z=h.z+h.nz;if(!inB(x,y,z)||get(x,y,z)!==AIR)return;const i=idx(x,y,z);if(objects.has(i))return;
+// R or right click places what's in your hand. It always does something or says why not.
+function placeAction(){if(!started||panel)return;const it=ITEMS[G.sel];
+  if(it.id==='tool'){toast("You're holding your pickaxe. Press 2 to 7 to pick what to place, then press R.",3000);return;}
   const have=count(it.id);if(!have){toast(it.id==='rock'?'No rock. Every block you dig gives you some.':`No ${it.name.toLowerCase()} left. Buy some at the General Store.`,2600,true);return;}
-  const p=player,overlapP=x+1>p.x-PW&&x<p.x+PW&&z+1>p.z-PW&&z<p.z+PW&&y+1>p.y&&y<p.y+PH;
-  if(it.id==='rock'){if(overlapP)return;setBlock(x,y,z,RUBBLE);G.rock--;}
-  else if(it.id==='ladder'){let rot=0;if(h.ny===0)rot=Math.atan2(h.nx,h.nz);else rot=Math.round(p.yaw/(Math.PI/2))*(Math.PI/2);addObject(i,LADDER,rot);G.pack.ladder--;}
+  const p=player,free=c=>inB(c[0],c[1],c[2])&&get(c[0],c[1],c[2])===AIR&&!objects.has(idx(c[0],c[1],c[2])),
+    overlaps=c=>c[0]+1>p.x-PW&&c[0]<p.x+PW&&c[2]+1>p.z-PW&&c[2]<p.z+PW&&c[1]+1>p.y&&c[1]<p.y+PH;
+  let h=raycast(4.8),cell=null;if(h&&!h.obj){const c=[h.x+h.nx,h.y+h.ny,h.z+h.nz];if(free(c))cell=c;}
+  if(!cell){h=null;const fx=Math.floor(p.x-Math.sin(p.yaw)*.9),fz=Math.floor(p.z-Math.cos(p.yaw)*.9),fy=Math.floor(p.y+.2);
+    for(const c of [[fx,fy,fz],[fx,fy+1,fz],[Math.floor(p.x),fy,Math.floor(p.z)]])if(free(c)&&!(it.id==='rock'&&overlaps(c))){cell=c;break;}}
+  if(!cell){toast('No room to put that here. Look at an open spot.',2400);return;}
+  const [x,y,z]=cell,i=idx(x,y,z);
+  if(it.id==='rock'){if(overlaps(cell)){toast("You're standing there! Step back first.",2200);return;}setBlock(x,y,z,RUBBLE);G.rock--;}
+  else if(it.id==='ladder'){let rot=0;if(h&&h.ny===0)rot=Math.atan2(h.nx,h.nz);else rot=Math.round(p.yaw/(Math.PI/2))*(Math.PI/2);addObject(i,LADDER,rot);G.pack.ladder--;}
   else if(it.id==='timber'){const fw=new THREE.Vector3();camera.getWorldDirection(fw);const r=timberSet(x,y,z,Math.abs(fw.x)>Math.abs(fw.z));if(typeof r==='string'){toast(r,3000);return;}
     addObject(r.cells[0],TIMBER,0,r);G.pack.timber--;once('timber','Timber set in! The posts and cap beam hold up the roof across the whole tunnel.');}
   else if(it.id==='dyn'){addObject(i,DYN);G.pack.dyn--;toast('Fuse lit! Get away, at least 4 steps!',2500,true);SFX.hiss();}

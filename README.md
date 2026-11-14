@@ -15,14 +15,14 @@ Play online at https://g12r.github.io/etc-mining-game/, or open `index.html` in 
 | `W` `A` `S` `D` | Walk. Hold `Shift` to run. |
 | Mouse | Look around |
 | Left click | Dig (hold it down), or pick gear back up |
-| Right click | Place the item you are holding |
+| `R` or right click | Place the item you are holding |
 | `Space` | Jump. Walk into a ladder and hold `W` to climb. |
 | `Q` | Light dynamite where you are looking (or at your feet), then run! You start with 3 sticks. |
 | `1`–`7` | Choose an item |
 | `E` | Use the store or mill, or feed a rat |
 | `Esc` | Pause and get your mouse back |
 
-If the mouse will not lock, drag to look, and use `F` to dig and `R` to place.
+If the mouse will not lock, drag to look and use `F` to dig.
 
 ## What can go wrong in a mine
 
