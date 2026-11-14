@@ -431,7 +431,13 @@ const gunG=new THREE.Group();hands.add(gunG);
  gunG.userData.drum=A(new THREE.CylinderGeometry(.031,.031,.055,6),blued,0,.025,-.06,Math.PI/2);A(new THREE.BoxGeometry(.026,.095,.036),wd,0,-.03,.025,-.35);
  A(new THREE.TorusGeometry(.018,.004,6,12,Math.PI),blued,0,-.003,-.035,0,Math.PI/2,Math.PI);A(new THREE.BoxGeometry(.01,.026,.016),blued,0,.056,.004,.4);A(new THREE.BoxGeometry(.004,.012,.01),blued,0,.054,-.265);}
 gunG.position.set(-.01,.035,-.05);gunG.rotation.y=.08;
-function animateHands(dt,dig,walk){const holdTool=ITEMS[G.sel].id==='tool';hands.visible=holdTool||true;pickG.visible=holdTool&&G.tool!=='drill';gunG.visible=ITEMS[G.sel].id==='revolver';gunKick=Math.max(0,gunKick-dt*5);gunG.rotation.x=gunKick*.5;gunG.position.z=-.05+gunKick*.05;if(gunCool>0)gunCool-=dt;drillG.visible=holdTool&&G.tool==='drill';
+const shotG=new THREE.Group();hands.add(shotG);
+{const blued=new THREE.MeshStandardMaterial({color:0x26282c,roughness:.35,metalness:.85}),wd=new THREE.MeshStandardMaterial({color:0x6b3e22,roughness:.55});const A=(g,m,x,y,z,rx,ry,rz)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,rz||0);shotG.add(o);return o;};
+ for(const sx of [-.016,.016])A(new THREE.CylinderGeometry(.015,.016,.62,10),blued,sx,.04,-.38,Math.PI/2);A(new THREE.BoxGeometry(.03,.012,.6),blued,0,.058,-.38);
+ A(new THREE.BoxGeometry(.05,.045,.24),wd,0,.012,-.3);A(new THREE.BoxGeometry(.05,.06,.12),blued,0,.035,-.03);A(new THREE.BoxGeometry(.045,.07,.3),wd,0,-.01,.15,-.22);
+ A(new THREE.TorusGeometry(.02,.004,6,12,Math.PI),blued,0,.002,-.02,0,Math.PI/2,Math.PI);A(new THREE.BoxGeometry(.012,.03,.02),blued,0,.072,.0,.5);}
+shotG.position.set(-.04,.02,.02);shotG.rotation.y=.07;
+function animateHands(dt,dig,walk){const holdTool=ITEMS[G.sel].id==='tool';hands.visible=holdTool||true;pickG.visible=holdTool&&G.tool!=='drill';gunG.visible=ITEMS[G.sel].id==='revolver'&&G.gun!=='shotgun';shotG.visible=ITEMS[G.sel].id==='revolver'&&G.gun==='shotgun';shotG.rotation.x=Math.min(1,gunKick)*.4;shotG.position.z=.02+Math.min(1,gunKick)*.08;gunKick=Math.max(0,gunKick-dt*5);gunG.rotation.x=gunKick*.5;gunG.position.z=-.05+gunKick*.05;if(gunCool>0)gunCool-=dt;drillG.visible=holdTool&&G.tool==='drill';
   const sw=dig?Math.abs(Math.sin(time*8.5)):0;pickG.rotation.x=-.25-sw*1.1;pickG.position.z=-sw*.08;
   drillG.position.x=dig?(Math.random()-.5)*.012:0;if(dig)drillG.userData.bit.rotation.y+=dt*40;
   hands.position.y=-.4+(walk?Math.sin(bob)*.012:0)+(dig&&G.tool==='drill'?(Math.random()-.5)*.008:0);hands.position.x=.36+(walk?Math.cos(bob*.5)*.01:0);}
@@ -727,14 +733,14 @@ const beamMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blendi
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.04,1.6,7,24,1,true),beamMat);beam.rotation.x=Math.PI/2;beam.position.set(0,.06,-3.6);camera.add(beam);
 /* ---------- state ---------- */
 function freshState(){generate();
-  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36,elevator:1},cyl:6,saloon:1,horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
+  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36,elevator:1,shells:20},cyl:6,sh:2,gun:'revolver',saloon:1,horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
   player={x:SPAWN.x,y:Hc(22,31)+1,z:SPAWN.z,yaw:-Math.PI/2,pitch:0,vy:0,ground:false,health:100,air:100,heat:0};}
 const enc=u=>{let s='';const CH=8192;for(let i=0;i<u.length;i+=CH)s+=String.fromCharCode.apply(null,u.subarray(i,i+CH));return btoa(s);};
 const dec=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
 function save(){try{const wat=[];openSet.forEach(i=>{if(WAT[i]>.02)wat.push(i,Math.round(WAT[i]*100));});
   localStorage.setItem(SAVE,JSON.stringify({W:enc(W),H:Array.from(H),trees,G,player:{x:player.x,y:player.y,z:player.z,yaw:player.yaw,pitch:player.pitch,health:player.health,air:player.air,heat:player.heat},
     obj:[...new Set(objects.values())].filter(o=>o.type!==DYN).map(o=>({i:o.i,type:o.type,rot:o.rot||0,set:o.set||null})),wat,rats:rats.filter(r=>r.buddy).map(r=>({x:r.x,y:r.y,z:r.z,name:r.name}))}));}catch(e){}}
-function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);const w=dec(d.W);if(w.length!==N)return false;W=w;H=Int16Array.from(d.H);trees=d.trees||[];G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(G.pack.elevator==null)G.pack.elevator=1;if(!G.saloon){G.saloon=1;buildSaloonLot();}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
+function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);const w=dec(d.W);if(w.length!==N)return false;W=w;H=Int16Array.from(d.H);trees=d.trees||[];G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(G.pack.elevator==null)G.pack.elevator=1;if(G.pack.shells==null){G.pack.shells=20;G.sh=2;G.gun='revolver';}if(!G.saloon){G.saloon=1;buildSaloonLot();}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
   player=Object.assign({vy:0,ground:false},d.player);return d;}catch(e){return false;}}
 function init(fromSave){
   objects&&objects.forEach(o=>scene.remove(o.mesh));objects=new Map();stress=new Map();items.forEach(it=>scene.remove(it.m));items=[];falling.forEach(f=>scene.remove(f.m));falling=[];fumes=[];
@@ -785,8 +791,8 @@ function removeObject(i){const o=objects.get(i);if(!o)return null;scene.remove(o
 
 /* ---------- HUD ---------- */
 const ITEMS=[{id:'tool',k:'1'},{id:'ladder',k:'2',name:'Ladder'},{id:'timber',k:'3',name:'Timber'},{id:'rock',k:'4',name:'Rock'},{id:'dyn',k:'5',name:'Dynamite'},{id:'pump',k:'6',name:'Pump'},{id:'fan',k:'7',name:'Fan'},{id:'cannon',k:'8',name:'Cannon'},{id:'revolver',k:'9',name:'Revolver'},{id:'elevator',k:'0',name:'Elevator'}];
-function count(id){return id==='rock'?G.rock:id==='tool'?'':id==='revolver'?`${G.cyl}/${G.pack.revolver}`:G.pack[id];}
-function renderHotbar(){$('#hotbar').innerHTML=ITEMS.map((it,i)=>`<button class="slot" type="button" data-i="${i}" aria-pressed="${G.sel===i}"><span class="k">${it.k}</span>${it.id==='tool'?(G.tool==='drill'?'Rock drill':'Pickaxe'):it.name}<span class="n">${it.id==='tool'?'&nbsp;':count(it.id)}</span></button>`).join('');
+function count(id){return id==='rock'?G.rock:id==='tool'?'':id==='revolver'?(G.gun==='shotgun'?`${G.sh}/${G.pack.shells}`:`${G.cyl}/${G.pack.revolver}`):G.pack[id];}
+function renderHotbar(){$('#hotbar').innerHTML=ITEMS.map((it,i)=>`<button class="slot" type="button" data-i="${i}" aria-pressed="${G.sel===i}"><span class="k">${it.k}</span>${it.id==='tool'?(G.tool==='drill'?'Rock drill':'Pickaxe'):it.id==='revolver'&&G.gun==='shotgun'?'Shotgun':it.name}<span class="n">${it.id==='tool'?'&nbsp;':count(it.id)}</span></button>`).join('');
   $('#hotbar').querySelectorAll('.slot').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();G.sel=+b.dataset.i;renderHotbar();}));}
 $('#hotbar').addEventListener('mousedown',e=>e.stopPropagation());
 let toastT=0;function toast(t,ms,warn){const el=$('#toast');el.textContent=t;el.classList.toggle('warn',!!warn);el.hidden=false;toastT=(ms||2800)/1000;}
@@ -810,7 +816,8 @@ window.addEventListener('mousemove',e=>{if(locked){player.yaw-=e.movementX*.0025
   else if(dragLook&&mouseL){player.yaw-=(e.clientX-lastMX)*.005;player.pitch=Math.max(-1.5,Math.min(1.5,player.pitch-(e.clientY-lastMY)*.005));lastMX=e.clientX;lastMY=e.clientY;}});
 window.addEventListener('keydown',e=>{if(!started||panel){if(panel&&e.key==='Escape')closePanel();return;}const k=e.key.length===1?e.key.toLowerCase():e.key;
   if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))e.preventDefault();keys.add(k);if(k===' ')jumpAt=time;
-  if(k>='1'&&k<='9'){G.sel=+k-1;renderHotbar();}if(k==='0'){G.sel=9;renderHotbar();}if(k==='e')interact();if(k==='q')throwDynamite();if(k==='r')placeAction();if(k==='f')clickDig();});
+  if(k>='1'&&k<='9'){if(k==='9'&&G.sel===8){G.gun=G.gun==='shotgun'?'revolver':'shotgun';tone(700,.05,.06,'square');toast(G.gun==='shotgun'?'Shotgun! Two barrels. Press 9 again for the revolver.':'Revolver! Press 9 again for the shotgun.',1800);}
+    else if(k==='9')once('gunswap','Revolver ready. Press 9 again to swap to the shotgun!');G.sel=+k-1;renderHotbar();}if(k==='0'){G.sel=9;renderHotbar();}if(k==='e')interact();if(k==='q')throwDynamite();if(k==='r')placeAction();if(k==='f')clickDig();});
 window.addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;keys.delete(k);});
 window.addEventListener('blur',()=>{keys.clear();mouseL=false;});
 $('#fsBtn').addEventListener('click',()=>{try{if(document.fullscreenElement)document.exitFullscreen();else{const r=stage.requestFullscreen&&stage.requestFullscreen();if(r&&r.catch)r.catch(()=>toast('Full screen is not available here.'));}}catch(e){toast('Full screen is not available here.');}});
@@ -819,7 +826,8 @@ $('#resetBtn').addEventListener('click',()=>{const b=$('#resetBtn');if(!b.datase
 
 /* ---------- raycast (against the solid cells the smooth rock is built on) ---------- */
 const dirV=new THREE.Vector3();
-function raycast(max){camera.getWorldDirection(dirV);const o=camera.position;let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
+function raycast(max){camera.getWorldDirection(dirV);return rayFrom(camera.position,dirV,max);}
+function rayFrom(o,dirV,max){let x=Math.floor(o.x),y=Math.floor(o.y),z=Math.floor(o.z);
   const sx=Math.sign(dirV.x),sy=Math.sign(dirV.y),sz=Math.sign(dirV.z);const tdx=Math.abs(1/dirV.x),tdy=Math.abs(1/dirV.y),tdz=Math.abs(1/dirV.z);
   let tx=sx>0?(x+1-o.x)*tdx:(o.x-x)*tdx,ty=sy>0?(y+1-o.y)*tdy:(o.y-y)*tdy,tz=sz>0?(z+1-o.z)*tdz:(o.z-z)*tdz;let nx=0,ny=0,nz=0,t=0;
   if(isNaN(tx))tx=Infinity;if(isNaN(ty))ty=Infinity;if(isNaN(tz))tz=Infinity;
@@ -989,7 +997,7 @@ function updateCannons(dt){objects.forEach(o=>{if(o.type!==CANNON)return;if(o.co
     if(hit||gone){scene.remove(B.m);balls.splice(b,1);if(hit){if(inB(...hit))explodeAt(...hit);else{burst(hit[0]+.5,hit[1]+.5,hit[2]+.5,0xffb347,30,12,{life:.5,g:2});SFX.boom();}}}}}
 /* ---------- the revolver: six shots, R reloads; it chips rock, knocks cans off the fence and sets off dynamite ---------- */
 let gunCool=0,gunKick=0;const cans=[];
-function shoot(){if(gunCool>0||!started||panel)return;
+function shoot(){if(G.gun==='shotgun'){shootShotgun();return;}if(gunCool>0||!started||panel)return;
   if(G.cyl<=0){tone(900,.04,.08,'square');toast(G.pack.revolver>0?'Click! Empty. Press R to reload.':'Click! Out of bullets. Buy a box at the General Store.',2200,true);gunCool=.25;return;}
   G.cyl--;gunCool=.38;gunKick=1;renderHotbar();noise(.16,4500,.9,6);noise(.7,650,.55,2.5);flash.position.copy(camera.position);flash.intensity=2.2;
   const gp=new THREE.Vector3();gunG.userData.drum.getWorldPosition(gp);burst(gp.x+dirV.x*.3,gp.y+dirV.y*.3,gp.z+dirV.z*.3,0xffd27a,4,2,{life:.08,g:0});
@@ -1012,7 +1020,7 @@ function goldPop(t,x,y,z,hx,hy,hz){if(t===PLANK||t===ROOF||t===LOG||t===LEAF)ret
 function updatePops(dt){const w=stage.clientWidth,h=stage.clientHeight,v=new THREE.Vector3();for(let i=pops.length-1;i>=0;i--){const P=pops[i];P.t+=dt;
   if(P.t>2.2){P.el.parentNode&&P.el.parentNode.removeChild(P.el);pops.splice(i,1);continue;}v.copy(P.pos).project(camera);if(v.z>1){P.el.style.opacity=0;continue;}
   P.el.style.left=((v.x+1)/2*w)+'px';P.el.style.top=((1-v.y)/2*h-P.t*45)+'px';P.el.style.opacity=Math.min(1,(2.2-P.t)*2);}}
-function reload(){const need=6-G.cyl;if(need<=0){toast('Already loaded. Six shots!',1200);return;}if(G.pack.revolver<=0){toast('No bullets left. Buy a box at the General Store.',2400,true);return;}
+function reload(){if(G.gun==='shotgun'){reloadShotgun();return;}const need=6-G.cyl;if(need<=0){toast('Already loaded. Six shots!',1200);return;}if(G.pack.revolver<=0){toast('No bullets left. Buy a box at the General Store.',2400,true);return;}
   const k=Math.min(need,G.pack.revolver);G.pack.revolver-=k;G.cyl+=k;gunCool=1;for(let i=0;i<k;i++)setTimeout(()=>tone(1300,.03,.06,'square'),120*i);setTimeout(()=>tone(650,.07,.09,'square'),120*k+150);
   toast('Reloading...',900);renderHotbar();}
 function buildRange(){const S=SURF,k=kit();for(const z of [5.5,7.6,9.7])k.box(TM.dark,.12,1.15,.12,17.5,S+.57,z);k.box(plankMat,.16,.08,4.5,17.5,S+1.11,7.6);k.box(TM.dark,.1,.08,4.3,17.5,S+.55,7.6);
@@ -1168,6 +1176,28 @@ function banditShoot(b,dist){const p=player,gx=b.x,gy=b.y+2.15,gz=b.z;if(dist>24
   if(Math.random()<.3)hurt(7,"Ouch! A bandit's bullet grazed you!");else{const a=Math.random()*6.28;burst(p.x+Math.cos(a)*1.2,p.y+.1,p.z+Math.sin(a)*1.2,0x8a7a5a,6,2,{life:.4});setTimeout(()=>tone(2800,.2,.04,'sine',1200),80);}}
 function steal(b){if(G.sack.length){b.loot={sacks:G.sack};G.sack=[];toast('A bandit grabbed your ore sacks! Shoot him twice to get them back!',3200,true);}
   else{const c=Math.min(500,G.money);G.money-=c;b.loot={cash:c};toast(`A bandit stole $${c}! Shoot him twice to get it back!`,3200,true);}hud();}
+/* ---------- the shotgun: two barrels, nine pellets a shot, R reloads ---------- */
+function shootShotgun(){if(gunCool>0||!started||panel)return;
+  if(G.sh<=0){tone(800,.05,.08,'square');toast(G.pack.shells>0?'Click! Both barrels are empty. Press R to reload.':'Out of shells! Buy a box at the General Store.',2200,true);gunCool=.25;return;}
+  G.sh--;gunCool=.35;gunKick=1.6;shakeT=Math.max(shakeT,.15);renderHotbar();noise(.3,2600,1,4);noise(1.2,380,.85,2);flash.position.copy(camera.position);flash.intensity=3;
+  camera.getWorldDirection(dirV);const o=camera.position.clone(),base=dirV.clone(),right=new THREE.Vector3().crossVectors(base,new THREE.Vector3(0,1,0)).normalize(),up=new THREE.Vector3().crossVectors(right,base).normalize();
+  {const gp=new THREE.Vector3();shotG.getWorldPosition(gp);burst(gp.x+base.x*.7,gp.y+base.y*.7,gp.z+base.z*.7,0xffd27a,8,3,{life:.1,g:0});}
+  const onBandit=new Map();
+  for(let k=0;k<9;k++){const d=base.clone();if(k){const a=Math.random()*6.283,r=Math.sqrt(Math.random())*.075;d.addScaledVector(right,Math.cos(a)*r).addScaledVector(up,Math.sin(a)*r).normalize();}
+    const h=rayFrom(o,d,32);let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):32,can=null;
+    for(const c of cans){if(c.down||!c.m.visible)continue;const v=c.m.position.clone().sub(o),t=v.dot(d);if(t<0||t>bt)continue;if(v.lengthSq()-t*t<.15*.15){can=c;bt=t;}}
+    if(can){knockCan(can,d);continue;}
+    const bh=banditHit(o,d,bt);if(bh){onBandit.set(bh,(onBandit.get(bh)||0)+1);continue;}
+    if(!h)continue;
+    if(h.obj){const ob=objects.get(h.i);if(ob&&ob.type===DYN){ob.fuse=Math.min(ob.fuse,.05);toast('You shot the dynamite!',1500,true);}continue;}
+    const t=W[h.i],hx=h.x+.5+h.nx*.52,hy=h.y+.5+h.ny*.52,hz=h.z+.5+h.nz*.52;if(k===0)goldPop(t,h.x,h.y,h.z,hx,hy,hz);
+    burst(hx,hy,hz,t===PLANK||t===ROOF||t===LOG?0x8a6a45:(COLOR[t]||0x888888),3,2.5,{life:.35});}
+  // a close blast with most of the pellets counts as two hits
+  onBandit.forEach((n,b)=>{hitBandit(b);if(n>=4&&b.need<99&&Math.hypot(b.x-o.x,b.z-o.z)<10)hitBandit(b);});
+  once('shotgun','BOOM! The shotgun sprays nine pellets. Up close it can knock a bandit out of the fight in one shot. Two shots, then press R.');}
+function reloadShotgun(){const need=2-G.sh;if(need<=0){toast('Both barrels are loaded!',1200);return;}if(G.pack.shells<=0){toast('No shells left. Buy a box at the General Store.',2400,true);return;}
+  const k=Math.min(need,G.pack.shells);G.pack.shells-=k;G.sh+=k;gunCool=1.1;tone(500,.06,.08,'square');for(let i=0;i<k;i++)setTimeout(()=>tone(900,.04,.07,'square'),250+i*250);setTimeout(()=>{noise(.08,1500,.2,3);tone(380,.06,.1,'square');},250+k*250+150);
+  toast('Reloading...',900);renderHotbar();}
 /* ---------- health ---------- */
 let hurtFlash=0,hurtSndT=0;
 function hurt(n,why){player.health-=n;if(why||time-hurtSndT>1){hurtSndT=time;SFX.hurt();hurtFlash=.6;}if(why)toast(why,2600,true);if(player.health<=0)passOut();}
@@ -1181,7 +1211,7 @@ function openPanel(html){if(document.pointerLockElement)document.exitPointerLock
   panel.addEventListener('mousedown',e=>e.stopPropagation());return panel;}
 function closePanel(){if(panel){panel.remove();panel=null;tryLock();}}
 const SHOP=[{sec:'Supplies'},{id:'ladder',name:'Ladder',ds:'Climb up and down shafts. Place it against a wall.',price:2,bulk:5},{id:'timber',name:'Timber set',ds:'Two posts and a cap beam. Holds up the roof across the whole tunnel, up to 5 blocks wide.',price:5,bulk:3},
-  {id:'dyn',name:'Dynamite',ds:'Breaks any rock. 5-second fuse. Leaves bad air behind.',price:6,bulk:3},{sec:'Equipment'},{id:'pump',name:'Steam pump',ds:'Drains groundwater all around it.',price:45},{id:'fan',name:'Ventilation fan',ds:'Blows fresh, cool air into your tunnels.',price:40},{id:'revolver',name:'Box of bullets',ds:'50 cartridges for your revolver (item 9).',price:5},{id:'elevator',name:'Mine elevator',ds:'A headframe, hoist and cage. Where you put it, the crew sinks a 60-foot shaft. Ride it with E.',price:500},{id:'cannon',name:'Cannon',ds:'Shoots an iron cannonball that blows up when it hits something. Stand next to it and press E.',price:50},
+  {id:'dyn',name:'Dynamite',ds:'Breaks any rock. 5-second fuse. Leaves bad air behind.',price:6,bulk:3},{sec:'Equipment'},{id:'pump',name:'Steam pump',ds:'Drains groundwater all around it.',price:45},{id:'fan',name:'Ventilation fan',ds:'Blows fresh, cool air into your tunnels.',price:40},{id:'revolver',name:'Box of bullets',ds:'50 cartridges for your revolver (item 9).',price:5},{id:'shells',name:'Box of shotgun shells',ds:'25 shells for your shotgun (press 9 twice).',price:4},{id:'elevator',name:'Mine elevator',ds:'A headframe, hoist and cage. Where you put it, the crew sinks a 60-foot shaft. Ride it with E.',price:500},{id:'cannon',name:'Cannon',ds:'Shoots an iron cannonball that blows up when it hits something. Stand next to it and press E.',price:50},
   {id:'drill',name:'Rock drill',ds:'Breaks hard rock and deep quartz, and digs twice as fast.',price:75,own:()=>G.tool==='drill'},{id:'lantern',name:'Big carbide lamp',ds:'Lights up much more of the tunnel.',price:20,own:()=>G.lantern>13},{id:'sacks',name:'More ore sacks',ds:'Carry 16 sacks instead of 8.',price:25,own:()=>G.cap>8}];
 function openStore(msg){const rows=SHOP.map(s=>{if(s.sec)return `<h4>${s.sec}</h4>`;const owned=s.own&&s.own();
     const act=owned?'<span class="ds">Owned</span>':`<span class="price">$${s.price}</span><button class="btn" data-b="${s.id}" data-q="1" ${G.money<s.price?'disabled':''}>Buy</button>${s.bulk?`<button class="ghost" data-b="${s.id}" data-q="${s.bulk}" ${G.money<s.price*s.bulk?'disabled':''}>×${s.bulk}</button>`:''}`;
@@ -1189,7 +1219,7 @@ function openStore(msg){const rows=SHOP.map(s=>{if(s.sec)return `<h4>${s.sec}</h
   const p=openPanel(`<h2>General Store</h2><p class="sub">Cash: <span class="price">${money(G.money)}</span></p>${rows}<div class="msg">${msg||''}</div><div class="foot"><button class="ghost" data-x>Back to the mine (Esc)</button></div>`);
   p.querySelector('[data-x]').addEventListener('click',closePanel);
   p.querySelectorAll('[data-b]').forEach(b=>b.addEventListener('click',()=>{const s=SHOP.find(t=>t.id===b.dataset.b),q=+b.dataset.q,cost=s.price*q;if(G.money<cost)return;G.money-=cost;SFX.coins();
-    if(s.id==='drill')G.tool='drill';else if(s.id==='lantern')G.lantern=22;else if(s.id==='sacks')G.cap=16;else if(s.id==='revolver')G.pack.revolver+=50*q;else G.pack[s.id]+=q;hud();renderHotbar();save();panel.remove();panel=null;openStore(`Bought: ${s.name}${q>1?' ×'+q:''}.`);}));}
+    if(s.id==='drill')G.tool='drill';else if(s.id==='lantern')G.lantern=22;else if(s.id==='sacks')G.cap=16;else if(s.id==='revolver')G.pack.revolver+=50*q;else if(s.id==='shells')G.pack.shells+=25*q;else G.pack[s.id]+=q;hud();renderHotbar();save();panel.remove();panel=null;openStore(`Bought: ${s.name}${q>1?' ×'+q:''}.`);}));}
 function openMill(){const n=G.sack.length;let body;
   if(!n)body=`<p class="sub">"Bring me ore sacks and I'll crush 'em. The mill fee is $1 a sack, and the assayer pays $20 an ounce for gold."</p>`;
   else body=`<p class="sub">You have <b>${n}</b> ore sack${n>1?'s':''}. The mill fee is <span class="price">$1</span> a sack. The assayer pays <span class="price">$20</span> an ounce.</p><div class="foot" style="justify-content:flex-start"><button class="btn" data-m>Crush my ore</button></div><div class="msg" data-r></div>`;
