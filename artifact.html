@@ -931,7 +931,7 @@ function airAt(x,y,z){if(!inB(x,y,z))return 0;const i=idx(x,y,z);if(!openSet.has
 
 /* ---------- explosions ---------- */
 function explode(o){const [cx,cy,cz]=cellXYZ(o.i);removeObject(o.i);explodeAt(cx,cy,cz);}
-function explodeAt(cx,cy,cz){const R=2.7;
+function explodeAt(cx,cy,cz){const R=2.7;for(const b of bandits)if(b.state!=='flee'&&Math.hypot(b.x-cx,b.z-cz)<7){b.state='flee';b.yell=1;}
   for(let x=cx-3;x<=cx+3;x++)for(let y=cy-3;y<=cy+3;y++)for(let z=cz-3;z<=cz+3;z++){if(!inB(x,y,z))continue;const d=Math.hypot(x-cx,y-cy,z-cz);if(d>R)continue;
     const i=idx(x,y,z);const ob=objects.get(i);if(ob&&ob.type!==DYN)removeObject(i);const t=W[i];if(!t||t===BED)continue;
     setBlock(x,y,z,AIR);if(t===QUARTZ||t===RICH)spawnItem(x+.5,y+.5,z+.5,oreGrade(t,y,x,z));if(Math.random()<.4)burst(x+.5,y+.5,z+.5,COLOR[t],3,8);}
@@ -981,6 +981,7 @@ function shoot(){if(gunCool>0||!started||panel)return;
   const h=raycast(70),o=camera.position,d=dirV;let bt=h?Math.hypot(h.x+.5-o.x,h.y+.5-o.y,h.z+.5-o.z):70,best=null;
   for(const c of cans){if(c.down||!c.m.visible)continue;const v=c.m.position.clone().sub(o),t=v.dot(d);if(t<0||t>bt)continue;if(v.lengthSq()-t*t<.15*.15){best=c;bt=t;}}
   if(best){knockCan(best,d);return;}
+  {const bh=banditHit(o,d,bt);if(bh){hitBandit(bh);return;}}
   if(!h){once('gun',"Bang! Shoot the tin cans on the fence by the store, or a lit stick of dynamite from far away. Bullets chip rock but can't dig it.");return;}
   const hx=h.x+.5+h.nx*.52,hy=h.y+.5+h.ny*.52,hz=h.z+.5+h.nz*.52;
   if(h.obj){const ob=objects.get(h.i);if(ob&&ob.type===DYN){ob.fuse=Math.min(ob.fuse,.05);toast('You shot the dynamite!',1500,true);}else tone(1900,.18,.08,'triangle',1300);return;}
@@ -1095,6 +1096,55 @@ function updateElevs(dt){for(const o of elevs()){const U=o.mesh.userData,S=o.set
   U.cage.position.y=o.cy-S.top;const len=Math.max(.1,S.top+6.75-.55-(o.cy+2.5));U.cable.scale.y=len;U.cable.position.y=2.5+len/2;}}
 function cageHold(p){let lv=0;for(const o of elevs()){const S=o.set;if(!(p.x>S.ox+.05&&p.x<S.ox+1.95&&p.z>S.oz+.05&&p.z<S.oz+1.95))continue;
   if(p.y<=o.cy+.02&&p.y>o.cy-1.0&&(p.vy<=0||o.dir>0)){if(p.vy<lv)lv=p.vy;p.y=o.cy;p.vy=0;p.ground=true;}}return lv;}
+/* ---------- bandits: the Black Hat Gang rides in now and then to rob you ---------- */
+// Two hits with the revolver and a bandit gives up, drops what he stole plus a $100 reward, and rides off. Nobody gets hurt worse than that.
+const bandits=[],bounties=[];let banditT=45;
+function riderMesh(){const k=kit(),shirt=new THREE.MeshStandardMaterial({color:0x3a3530,roughness:.9}),coat=new THREE.MeshStandardMaterial({color:0x2a2420,roughness:.9});
+  k.cyl(coat,.19,.22,.62,0,2.08,.05);k.cyl(shirt,.15,.15,.08,0,2.42,.05);k.ball(skinM,.14,0,2.6,.05,1,1.1,1);k.box(TM.red,.27,.13,.06,0,2.53,-.07);for(const s of [-1,1])k.ball(TM.black,.02,s*.05,2.64,-.08);
+  for(const s of [-1,1]){k.cyl(TM.pants,.08,.07,.8,s*.27,1.5,0,0,0,s*.3);k.box(TM.black,.11,.1,.24,s*.38,1.1,-.05);}
+  k.cyl(coat,.06,.055,.55,-.27,2.05,0,0,0,-.15);k.ball(skinM,.06,-.31,1.78,-.02);k.cyl(coat,.06,.055,.55,.25,2.1,-.18,.9,0,.2);k.ball(skinM,.06,.3,2.12,-.43);
+  k.box(TM.black,.04,.07,.22,.3,2.15,-.55);const g=k.done(true);
+  const hat=new THREE.Group(),h=kit();h.cyl(TM.black,.33,.33,.025,0,0,0,0,0,0,16);h.cyl(TM.black,.13,.15,.2,0,.11,0);h.box(TM.dark,.3,.035,.3,0,.04,0);hat.add(h.done(true));hat.position.set(0,2.73,.05);g.add(hat);g.userData.hat=hat;return g;}
+function spawnGang(){const n=2+(Math.random()<.4?1:0),side=Math.floor(Math.random()*3);
+  for(let i=0;i<n;i++){let x,z;if(side===0){x=63;z=8+Math.random()*48;}else if(side===1){x=8+Math.random()*25;z=63;}else{x=8+Math.random()*25;z=0;}x+=(Math.random()-.5)*3;z+=(Math.random()-.5)*3;
+    const m=horseMesh({coat:[0x4a2e1c,0x2a2420,0x6a5a4a][i%3],mane:0x141010});const r=riderMesh();m.add(r);scene.add(m);
+    bandits.push({m,r,x,z,y:groundBelow(x,Y-2,z),yaw:0,ph:Math.random()*6,spd:0,hits:0,state:'come',shootT:2+Math.random()*2,t:0,loot:null,orbit:(i%2?1:-1)*(.8+Math.random()*.4),hatV:null});}
+  toast('BANDITS! The Black Hat Gang is riding into town! Grab your revolver (9) and run them off!',4200,true);bell(4);}
+function clearLine(ax,ay,az,bx,by,bz){const n=Math.ceil(Math.hypot(bx-ax,by-ay,bz-az)/.5);for(let i=1;i<n;i++){const t=i/n;if(solid(Math.floor(ax+(bx-ax)*t),Math.floor(ay+(by-ay)*t),Math.floor(az+(bz-az)*t)))return false;}return true;}
+function banditHit(o,d,maxT){let best=null,bt=maxT;for(const b of bandits){if(b.state==='flee'&&b.hits>=2)continue;const c=new THREE.Vector3(b.x,b.y+2.2,b.z).sub(o),t=c.dot(d);if(t<0||t>bt)continue;if(c.lengthSq()-t*t<.55*.55){best=b;bt=t;}}return best;}
+function hitBandit(b){b.hits++;for(let i=0;i<5;i++)setTimeout(()=>tone(500-i*60,.09,.07,'sawtooth'),i*70);
+  if(b.hits===1){b.hatV=new THREE.Vector3((Math.random()-.5)*2,4,(Math.random()-.5)*2);toast('You shot his hat off! One more hit and he gives up.',2400);}
+  else{b.state='flee';b.t=0;toast(b.loot?'The bandit gives up! He dropped what he stole, and there is a $100 reward. Go grab the bag!':'The bandit gives up and rides off! There is a $100 reward. Go grab the bag!',3600);
+    const m=new THREE.Group(),k=kit();k.ball(TM.cloth,.22,0,.2,0,1,1.1,1);k.cyl(TM.dark,.06,.1,.12,0,.42,0);k.cyl(TM.cloth,.05,.03,.1,0,.52,0);m.add(k.done(true));const gl=glowSprite(0xffd25e,.7);gl.position.y=.3;m.add(gl);
+    m.position.set(b.x,groundBelow(b.x,b.y+1,b.z),b.z);scene.add(m);bounties.push({m,loot:b.loot});b.loot=null;}}
+function moveBandit(b,dt,tx,tz,speed){let want=Math.atan2(-(tx-b.x),-(tz-b.z));let dy=Math.atan2(Math.sin(want-b.yaw),Math.cos(want-b.yaw));b.yaw+=dy*Math.min(1,dt*4);
+  const step=speed*dt,nx=b.x-Math.sin(b.yaw)*step,nz=b.z-Math.cos(b.yaw)*step,cx=Math.floor(nx),cz=Math.floor(nz),by=Math.round(b.y);
+  const wallAt=yy=>solid(cx,yy,cz);if(wallAt(by+1)||wallAt(by+2)||(wallAt(by)&&wallAt(by+1))){b.yaw+=b.orbit*1.3;return 0;}
+  b.x=nx;b.z=nz;const gy=groundBelow(b.x,b.y+1.2,b.z);b.y+=(gy-b.y)*Math.min(1,dt*10);return speed;}
+function updateBandits(dt){const p=player,onTop=p.y>=Hc(Math.floor(p.x),Math.floor(p.z))-.5&&under<.5;
+  if(!bandits.length&&started&&!panel){banditT-=dt;if(banditT<=0){if(onTop&&!riding){spawnGang();banditT=200+Math.random()*120;}else banditT=20;}}
+  for(let i=bandits.length-1;i>=0;i--){const b=bandits[i];b.t+=dt;const dx=p.x-b.x,dz=p.z-b.z,dist=Math.hypot(dx,dz);let sp=0;
+    if(b.state==='come'){sp=moveBandit(b,dt,p.x,p.z,11);if(dist<11){b.state='circle';b.t=0;}}
+    else if(b.state==='circle'){const a=Math.atan2(b.x-p.x,b.z-p.z)+b.orbit*.6;sp=moveBandit(b,dt,p.x+Math.sin(a)*9,p.z+Math.cos(a)*9,7);
+      b.shootT-=dt;if(b.shootT<=0){b.shootT=2.2+Math.random()*1.6;banditShoot(b,dist);if(Math.random()<.25){b.state='rob';b.t=0;}}
+      if(b.t>50||!onTop&&b.t>12){b.state='flee';b.t=0;}}
+    else if(b.state==='rob'){sp=moveBandit(b,dt,p.x,p.z,12);if(dist<2.3){steal(b);b.state='flee';b.t=0;}if(b.t>10){b.state='circle';b.t=0;}}
+    else{const ax=b.x+(b.x-p.x),az=b.z+(b.z-p.z);sp=moveBandit(b,dt,ax,az,13);if(b.yell){b.yell=0;for(let k=0;k<4;k++)setTimeout(()=>tone(700+k*90,.1,.06,'sawtooth'),k*80);}
+      if(b.x<-12||b.x>76||b.z<-12||b.z>76||b.t>30){scene.remove(b.m);bandits.splice(i,1);if(!bandits.length&&!G.seen.gangGone){G.seen.gangGone=1;}continue;}}
+    if(dist<30&&sp>1&&Math.random()<dt*7)noise(.05,1300+Math.random()*400,.07*(1-dist/30),4);
+    animLegs(b,dt,sp);b.m.position.set(b.x,b.y,b.z);b.m.rotation.y=b.yaw;
+    const hat=b.r.userData.hat;if(b.hatV){b.hatV.y-=9.8*dt;hat.position.addScaledVector(b.hatV,dt);hat.rotation.x+=dt*8;if(hat.position.y<.05-b.y+groundBelow(b.x,b.y,b.z)){b.hatV=null;}}}
+  for(let i=bounties.length-1;i>=0;i--){const B=bounties[i];B.m.rotation.y+=dt*2;if(Math.hypot(B.m.position.x-p.x,B.m.position.z-p.z)<1.3&&Math.abs(B.m.position.y-p.y)<1.6){
+    let msg='Reward! +$100';if(B.loot){if(B.loot.sacks)G.sack=G.sack.concat(B.loot.sacks).slice(0,G.cap);if(B.loot.cash)G.money+=B.loot.cash;msg+=' and you got back what he stole!';}
+    G.money+=100;hud();SFX.coins();toast(msg,2600);scene.remove(B.m);bounties.splice(i,1);}}}
+function animLegs(h,dt,moving){const legs=h.m.userData.legs;h.spd+=(moving-h.spd)*Math.min(1,dt*5);const s=h.spd;h.ph+=dt*(s>9?13:s>.5?7+s*.4:0);const amp=s>9?.75:s>.5?.42:0;
+  legs.forEach((L,i)=>{const off=s>9?[0,.5,1.6,2.1][i]:[0,Math.PI,Math.PI,0][i];L.hip.rotation.x=Math.sin(h.ph+off)*amp;L.knee.rotation.x=(L.front?1:-1)*Math.max(0,-Math.cos(h.ph+off))*amp*1.1;});
+  h.m.userData.tail.rotation.z=Math.sin(time*(s>.5?6:1.6)+h.ph)*(s>.5?.25:.15);}
+function banditShoot(b,dist){const p=player,gx=b.x,gy=b.y+2.15,gz=b.z;if(dist>24||!clearLine(gx,gy,gz,p.x,p.y+1.5,p.z))return;
+  const v=Math.max(.15,1-dist/30);noise(.14,3500,.55*v,6);noise(.5,600,.35*v,2.5);const f=glowSprite(0xffd27a,.6);f.position.set(gx-Math.sin(b.yaw)*.6,gy,gz-Math.cos(b.yaw)*.6);scene.add(f);setTimeout(()=>scene.remove(f),90);
+  if(Math.random()<.3)hurt(7,"Ouch! A bandit's bullet grazed you!");else{const a=Math.random()*6.28;burst(p.x+Math.cos(a)*1.2,p.y+.1,p.z+Math.sin(a)*1.2,0x8a7a5a,6,2,{life:.4});setTimeout(()=>tone(2800,.2,.04,'sine',1200),80);}}
+function steal(b){if(G.sack.length){b.loot={sacks:G.sack};G.sack=[];toast('A bandit grabbed your ore sacks! Shoot him twice to get them back!',3200,true);}
+  else{const c=Math.min(500,G.money);G.money-=c;b.loot={cash:c};toast(`A bandit stole $${c}! Shoot him twice to get it back!`,3200,true);}hud();}
 /* ---------- health ---------- */
 let hurtFlash=0,hurtSndT=0;
 function hurt(n,why){player.health-=n;if(why||time-hurtSndT>1){hurtSndT=time;SFX.hurt();hurtFlash=.6;}if(why)toast(why,2600,true);if(player.health<=0)passOut();}
@@ -1164,7 +1214,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   else digP=Math.max(0,digP-dt*2);
   ring.style.setProperty('--p',(digP*100).toFixed(0)+'%');ring.hidden=digP<=0;
   objects.forEach(o=>{if(o.type!==DYN)return;o.fuse-=dt;if(Math.random()<dt*30)burst(o.mesh.position.x,o.mesh.position.y,o.mesh.position.z,0xffd37a,1,1.5,{life:.3,g:-2});if(o.fuse<=0)explode(o);});
-  updateCannons(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
+  updateCannons(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
   caveT+=dt;if(caveT>.4){caveCheck(caveT);caveT=0;}
   waterT+=dt;if(waterT>.1){waterTick();waterT=0;}
   wbT+=dt;if(wbT>.25){buildWater();wbT=0;}
@@ -1230,7 +1280,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   renderer.render(scene,camera);requestAnimationFrame(frame);}
 init(true);signs();buildTown();buildSaloon();buildRange();buildHorses();buildDecor();resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-window.__ueg={decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
+window.__ueg={bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
 requestAnimationFrame(frame);
 })();
 </script>
