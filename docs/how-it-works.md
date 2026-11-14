@@ -48,7 +48,8 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | fresh air | Air spreads about 10 blocks from any opening to the sky and from fans. Beyond that the canary goes quiet and the air bar drops. Dynamite smoke counts as bad air. |
 | explosions | Clears a sphere, including hard rock, throws debris, hurts the player if close. |
 | cannons | `fireCannon` raycasts from the camera (ignoring the cannon itself), turns the cannon to the hit point and solves the low ballistic angle for a 34 m/s ball. `updateCannons` moves the balls and calls `explodeAt` on the first solid cell or object they touch. |
-| the revolver | `shoot` raycasts 70 blocks, tests the five tin cans on the target fence first (ray against a small sphere), then the block or object hit. It never removes blocks. A hit on a lit dynamite object sets its fuse to nearly zero. `reload` fills the six-shot cylinder from the spare bullets. Clicking and F call `shoot` instead of digging while item 9 is held. |
+| the revolver | `shoot` raycasts 70 blocks, tests the five tin cans on the target fence first (ray against a small sphere), then the block or object hit. It never removes blocks. A hit on a lit dynamite object sets its fuse to nearly zero. `goldPop` floats the block's gold above the hit point; `oreGrade(t,y,x,z)` is fixed per block so the reading matches what digging gives. `reload` fills the six-shot cylinder from the spare bullets. Clicking and F call `shoot` instead of digging while item 9 is held. |
+| horses | `G.horses` holds each horse's place and is saved. `riding` is the horse you are on: the player's capsule does the moving, speed goes up, the camera rises a metre, and `updateHorses` puts the horse under you and animates the legs from its speed (trot pairs, then a gallop). Idle horses settle onto the ground below them, so they never float. |
 | health | Damage from falls, rocks, drowning, bad air and heat; recovery. |
 | store & mill | The General Store sells gear. The Stamp Mill crushes sacks for $1 each and the assayer pays $20 an ounce. |
 | main loop | Per-frame update and draw. |
@@ -70,6 +71,7 @@ Saved to `localStorage` under `ueg-save-v3`: the block grid, the height map, tre
 - **Q did nothing.** See request 8: no dynamite in the pack, an aim that had to be exact, and a protected town. Any one of those reads to a player as "the key is broken".
 - **R did nothing.** Request 11. R placed things already, but did nothing and said nothing when he held the pickaxe, had none of the item, or aimed at the sky. Now `placeAction` always places (falling back to the spot in front of his feet) or shows why not.
 - **The first cannon blew up the player.** It fired along the look direction, the ball dropped onto the slope a few blocks ahead, and the blast hurt him. Aiming at the crosshair's hit point, and refusing targets under 5 blocks, fixed it.
+- **Pale horses.** three r128 treats a hex colour as linear, so a black horse came out grey. Horse colours go through `convertSRGBToLinear()`.
 - **Floating buildings.** Blasting under the town left it hanging until the support checks were added.
 
 ## When he says it's broken

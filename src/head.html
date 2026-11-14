@@ -52,6 +52,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .slot[aria-pressed="true"]{border-color:var(--lamp);background:rgba(70,48,18,.92)}
 .toast{position:absolute;left:50%;top:48px;transform:translateX(-50%);background:rgba(12,10,8,.92);border:1px solid var(--lamp);border-radius:6px;padding:6px 14px;max-width:min(92%,640px);text-align:center;color:var(--fg)}
 .toast.warn{border-color:var(--warn)}
+.pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--label);font-weight:700;font-size:1.25rem;color:var(--muted);text-shadow:0 2px 3px #000,0 0 2px #000;white-space:nowrap;pointer-events:none}
+.pop.gold{color:var(--gold);font-size:1.6rem}.pop small{color:var(--ok);font-size:.8em;margin-left:4px}
 .prompt{position:absolute;left:50%;top:calc(50% + 28px);transform:translateX(-50%);background:rgba(12,10,8,.88);border:1px solid var(--lamp);border-radius:6px;padding:3px 12px;white-space:nowrap}
 .prompt kbd{background:var(--lamp);color:#1a120a;border-radius:3px;padding:0 6px;margin-right:6px;font-family:var(--label)}
 .vignette{position:absolute;inset:0;pointer-events:none;transition:box-shadow .3s}
@@ -81,7 +83,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow">Untitled Emmett Game · version 0.5</div>
+      <div class="eyebrow">Untitled Emmett Game · version 0.6</div>
       <h1>Untitled Emmett Game</h1>
       <p>A realistic gold mine. Dig for gold-bearing quartz, crush it at the stamp mill and stay alive: cave-ins, groundwater, bad air, heat and rock too hard for a pick.</p>
     </div>
@@ -106,7 +108,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     </div>
     <div class="overlay" id="startOv">
       <div class="card start">
-        <div class="eyebrow">Version 0.5</div>
+        <div class="eyebrow">Version 0.6</div>
         <h2>Untitled Emmett Game</h2>
         <p class="sub">You're a hard-rock gold miner. The old <b>EMMETT No. 1</b> mine is in the mountain straight ahead. Buy gear at the General Store, follow the quartz, and haul your ore sacks to the Stamp Mill. Turn your sound on.</p>
         <div class="keys">

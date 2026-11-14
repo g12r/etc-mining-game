@@ -510,14 +510,14 @@ const beamMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blendi
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.04,1.6,7,24,1,true),beamMat);beam.rotation.x=Math.PI/2;beam.position.set(0,.06,-3.6);camera.add(beam);
 /* ---------- state ---------- */
 function freshState(){generate();
-  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36},cyl:6,sel:0,seen:{gift:1,rich:1}};
+  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36},cyl:6,horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
   player={x:SPAWN.x,y:Hc(22,31)+1,z:SPAWN.z,yaw:-Math.PI/2,pitch:0,vy:0,ground:false,health:100,air:100,heat:0};}
 const enc=u=>{let s='';const CH=8192;for(let i=0;i<u.length;i+=CH)s+=String.fromCharCode.apply(null,u.subarray(i,i+CH));return btoa(s);};
 const dec=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
 function save(){try{const wat=[];openSet.forEach(i=>{if(WAT[i]>.02)wat.push(i,Math.round(WAT[i]*100));});
   localStorage.setItem(SAVE,JSON.stringify({W:enc(W),H:Array.from(H),trees,G,player:{x:player.x,y:player.y,z:player.z,yaw:player.yaw,pitch:player.pitch,health:player.health,air:player.air,heat:player.heat},
     obj:[...new Set(objects.values())].filter(o=>o.type!==DYN).map(o=>({i:o.i,type:o.type,rot:o.rot||0,set:o.set||null})),wat,rats:rats.filter(r=>r.buddy).map(r=>({x:r.x,y:r.y,z:r.z,name:r.name}))}));}catch(e){}}
-function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);const w=dec(d.W);if(w.length!==N)return false;W=w;H=Int16Array.from(d.H);trees=d.trees||[];G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
+function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);const w=dec(d.W);if(w.length!==N)return false;W=w;H=Int16Array.from(d.H);trees=d.trees||[];G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
   player=Object.assign({vy:0,ground:false},d.player);return d;}catch(e){return false;}}
 function init(fromSave){
   objects&&objects.forEach(o=>scene.remove(o.mesh));objects=new Map();stress=new Map();items.forEach(it=>scene.remove(it.m));items=[];falling.forEach(f=>scene.remove(f.m));falling=[];fumes=[];
@@ -597,7 +597,7 @@ window.addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase()
 window.addEventListener('blur',()=>{keys.clear();mouseL=false;});
 $('#fsBtn').addEventListener('click',()=>{try{if(document.fullscreenElement)document.exitFullscreen();else{const r=stage.requestFullscreen&&stage.requestFullscreen();if(r&&r.catch)r.catch(()=>toast('Full screen is not available here.'));}}catch(e){toast('Full screen is not available here.');}});
 $('#resetBtn').addEventListener('click',()=>{const b=$('#resetBtn');if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Click again to start over';setTimeout(()=>{delete b.dataset.sure;b.textContent='Start a new mine';},3000);return;}
-  delete b.dataset.sure;b.textContent='Start a new mine';try{localStorage.removeItem(SAVE);}catch(e){}init(false);});
+  delete b.dataset.sure;b.textContent='Start a new mine';try{localStorage.removeItem(SAVE);}catch(e){}init(false);buildHorses();});
 
 /* ---------- raycast (against the solid cells the smooth rock is built on) ---------- */
 const dirV=new THREE.Vector3();
@@ -630,9 +630,10 @@ function clickDig(){if(ITEMS[G.sel].id==='revolver'){shoot();return;}const h=ray
 function pickUp(i){const o=objects.get(i);if(!o)return;if(o.type===DYN){toast('The fuse is lit! Run!',1500,true);return;}
   if(o.type===TIMBER){removeObject(i);G.pack.timber++;}
   else{removeObject(i);G.pack[['','ladder','timber','pump','fan','','cannon'][o.type]]++;}SFX.place();renderHotbar();}
-const oreGrade=(t,y)=>t===RICH?.8+Math.random()*1.4:(.12+Math.random()*.3)*(1+depthG(y)*.03);
+// how much gold a block holds; fixed per block, so what a bullet shows is what you get when you dig it
+const oreGrade=(t,y,x,z)=>{const r=x==null?Math.random():jit(x,y,z,21)+.5;return t===RICH?.8+r*1.4:(.12+r*.3)*(1+depthG(y)*.03);};
 function breakBlock(x,y,z){const t=get(x,y,z);setBlock(x,y,z,AIR);SFX.brk();burst(x+.5,y+.5,z+.5,COLOR[t]||0x777777,12,3);
-  if(t===QUARTZ||t===RICH)addOre(oreGrade(t,y),x+.5,y+.5,z+.5);else if(G.rock<60)G.rock++;hud();renderHotbar();}
+  if(t===QUARTZ||t===RICH)addOre(oreGrade(t,y,x,z),x+.5,y+.5,z+.5);else if(G.rock<60)G.rock++;hud();renderHotbar();}
 function addOre(grade,x,y,z){if(G.sack.length<G.cap){G.sack.push(Math.round(grade*100)/100);SFX.gold();once('ore','You bagged a sack of gold-bearing quartz! Take it to the Stamp Mill to crush out the gold.');hud();}
   else{spawnItem(x,y,z,grade);once('full','Your ore sacks are full. Haul them to the Stamp Mill, or buy more sacks.',true);}}
 function throwDynamite(){if(!started||panel)return;
@@ -728,7 +729,7 @@ function explode(o){const [cx,cy,cz]=cellXYZ(o.i);removeObject(o.i);explodeAt(cx
 function explodeAt(cx,cy,cz){const R=2.7;
   for(let x=cx-3;x<=cx+3;x++)for(let y=cy-3;y<=cy+3;y++)for(let z=cz-3;z<=cz+3;z++){if(!inB(x,y,z))continue;const d=Math.hypot(x-cx,y-cy,z-cz);if(d>R)continue;
     const i=idx(x,y,z);const ob=objects.get(i);if(ob&&ob.type!==DYN)removeObject(i);const t=W[i];if(!t||t===BED)continue;
-    setBlock(x,y,z,AIR);if(t===QUARTZ||t===RICH)spawnItem(x+.5,y+.5,z+.5,oreGrade(t,y));if(Math.random()<.4)burst(x+.5,y+.5,z+.5,COLOR[t],3,8);}
+    setBlock(x,y,z,AIR);if(t===QUARTZ||t===RICH)spawnItem(x+.5,y+.5,z+.5,oreGrade(t,y,x,z));if(Math.random()<.4)burst(x+.5,y+.5,z+.5,COLOR[t],3,8);}
   burst(cx+.5,cy+.5,cz+.5,0xffb347,40,14,{life:.5,g:2});burst(cx+.5,cy+.5,cz+.5,0x777777,40,4,{life:2.5,g:-1,vy:.5});
   flash.position.set(cx+.5,cy+.5,cz+.5);flash.intensity=6;shakeT=.8;SFX.boom();
   stress.forEach((s,ri)=>{const [x,y,z]=cellXYZ(ri);if(Math.hypot(x-cx,y-cy,z-cz)<8)stress.set(ri,Math.min(.95,s+.4));});
@@ -778,9 +779,18 @@ function shoot(){if(gunCool>0||!started||panel)return;
   if(!h){once('gun',"Bang! Shoot the tin cans on the fence by the store, or a lit stick of dynamite from far away. Bullets chip rock but can't dig it.");return;}
   const hx=h.x+.5+h.nx*.52,hy=h.y+.5+h.ny*.52,hz=h.z+.5+h.nz*.52;
   if(h.obj){const ob=objects.get(h.i);if(ob&&ob.type===DYN){ob.fuse=Math.min(ob.fuse,.05);toast('You shot the dynamite!',1500,true);}else tone(1900,.18,.08,'triangle',1300);return;}
-  const t=W[h.i];burst(hx,hy,hz,t===PLANK||t===ROOF||t===LOG?0x8a6a45:(COLOR[t]||0x888888),7,3,{life:.4});burst(hx,hy,hz,0xffe08a,3,4,{life:.12,g:0});
+  const t=W[h.i];goldPop(t,h.x,h.y,h.z,hx,hy,hz);burst(hx,hy,hz,t===PLANK||t===ROOF||t===LOG?0x8a6a45:(COLOR[t]||0x888888),7,3,{life:.4});burst(hx,hy,hz,0xffe08a,3,4,{life:.12,g:0});
   if(t!==PLANK&&t!==ROOF&&t!==LOG&&Math.random()<.6)setTimeout(()=>tone(2600+Math.random()*1500,.28,.05,'sine',800),50);
   once('gun',"Bang! Shoot the tin cans on the fence by the store, or a lit stick of dynamite from far away. Bullets chip rock but can't dig it.");}
+// shoot a rock and a number pops up showing how much gold is in it
+const pops=[];
+function goldPop(t,x,y,z,hx,hy,hz){if(t===PLANK||t===ROOF||t===LOG||t===LEAF)return;const el=document.createElement('div');el.className='pop';
+  if(t===QUARTZ||t===RICH){const oz=oreGrade(t,y,x,z);el.innerHTML=`${oz.toFixed(2)} oz gold <small>$${Math.round(oz*20)}</small>`;el.classList.add('gold');SFX.gold();}
+  else el.textContent='No gold';
+  $('.hud').appendChild(el);pops.push({el,pos:new THREE.Vector3(hx,hy,hz),t:0});if(pops.length>8){const o=pops.shift();o.el.parentNode&&o.el.parentNode.removeChild(o.el);}}
+function updatePops(dt){const w=stage.clientWidth,h=stage.clientHeight,v=new THREE.Vector3();for(let i=pops.length-1;i>=0;i--){const P=pops[i];P.t+=dt;
+  if(P.t>2.2){P.el.parentNode&&P.el.parentNode.removeChild(P.el);pops.splice(i,1);continue;}v.copy(P.pos).project(camera);if(v.z>1){P.el.style.opacity=0;continue;}
+  P.el.style.left=((v.x+1)/2*w)+'px';P.el.style.top=((1-v.y)/2*h-P.t*45)+'px';P.el.style.opacity=Math.min(1,(2.2-P.t)*2);}}
 function reload(){const need=6-G.cyl;if(need<=0){toast('Already loaded. Six shots!',1200);return;}if(G.pack.revolver<=0){toast('No bullets left. Buy a box at the General Store.',2400,true);return;}
   const k=Math.min(need,G.pack.revolver);G.pack.revolver-=k;G.cyl+=k;gunCool=1;for(let i=0;i<k;i++)setTimeout(()=>tone(1300,.03,.06,'square'),120*i);setTimeout(()=>tone(650,.07,.09,'square'),120*k+150);
   toast('Reloading...',900);renderHotbar();}
@@ -793,6 +803,45 @@ function knockCan(c,d){c.down=true;c.t=0;c.v.set(d.x*5+(Math.random()-.5)*1.5,2.
 function updateCans(dt){for(const c of cans){c.m.visible=c.fence.visible;if(!c.down)continue;c.t+=dt;const P=c.m.position,gy=Hc(Math.floor(P.x),Math.floor(P.z))+1.09;
   if(P.y>gy||c.v.y>0){c.v.y-=9.8*dt;P.addScaledVector(c.v,dt);c.m.rotation.x+=c.spin.x*dt;c.m.rotation.y+=c.spin.y*dt;c.m.rotation.z+=c.spin.z*dt;if(P.y<gy){P.y=gy;c.v.set(c.v.x*.3,Math.abs(c.v.y)>2?-c.v.y*.3:0,c.v.z*.3);c.spin.multiplyScalar(.4);if(Math.abs(c.v.y)>.3)tone(900,.05,.04,'triangle');}}
   if(c.t>6){c.down=false;P.copy(c.home);c.m.rotation.set(0,0,0);}}}
+/* ---------- horses: E to get on and off; ride with W A S D, Shift to gallop ---------- */
+const HORSE_LOOKS=[{coat:0x7a4a2a,mane:0x2a1a10,name:'Nugget'},{coat:0x2a2420,mane:0x141010,name:'Midnight'},{coat:0xcfc6b8,mane:0x8a8278,name:'Dusty'}];
+const horses=[];let riding=null,horseBob=0,hoofT=0;
+function horseMesh(look){const lin=h=>new THREE.Color(h).convertSRGBToLinear(),coat=new THREE.MeshStandardMaterial({color:lin(look.coat),roughness:.7}),mane=new THREE.MeshStandardMaterial({color:lin(look.mane),roughness:.9}),
+    leather=new THREE.MeshStandardMaterial({color:0x5a3218,roughness:.6}),hoofM=new THREE.MeshStandardMaterial({color:0x1e1a16,roughness:.8});
+  const g=new THREE.Group(),k=kit();
+  k.ball(coat,.42,0,1.28,0,1,1,2.25);k.ball(coat,.4,0,1.32,-.62,1.02,1.05,1.1);k.ball(coat,.43,0,1.3,.62,1.05,1.05,1.1);
+  k.cyl(coat,.16,.27,.85,0,1.8,-1.02,-.62);const hg=new THREE.SphereGeometry(.16,12,9);hg.scale(.85,.95,2.1);k.add(hg,coat,0,2.04,-1.42,.55,0,0);k.ball(hoofM,.1,0,1.86,-1.68,1,.9,1.1);
+  for(const s of [-1,1]){k.add(new THREE.ConeGeometry(.045,.16,6),coat,s*.075,2.3,-1.24,-.3,0,s*.2);k.ball(hoofM,.025,s*.12,2.1,-1.47);}
+  k.box(mane,.07,.82,.13,0,1.96,-.96,-.62);k.box(mane,.06,.12,.16,0,2.2,-1.28,-.3);
+  k.box(leather,.6,.07,.66,0,1.71,-.08);k.box(leather,.66,.32,.5,0,1.55,-.08);k.box(new THREE.MeshStandardMaterial({color:0x8a5a2a,roughness:.6}),.5,.04,.3,0,1.76,.12);k.cyl(leather,.03,.04,.14,0,1.8,-.36);
+  for(const s of [-1,1]){k.box(leather,.025,.55,.04,s*.34,1.3,-.05);k.add(new THREE.TorusGeometry(.06,.012,6,12),MAT.iron,s*.34,1.0,-.05,0,Math.PI/2,0);k.box(leather,.02,.02,.5,s*.13,2.03,-1.42,.55);}
+  g.add(k.done(true));
+  const legs=[];for(const [lx,lz] of [[-.2,-.68],[.2,-.68],[-.2,.7],[.2,.7]]){const hip=new THREE.Group();hip.position.set(lx,1.12,lz);g.add(hip);
+    const up=new THREE.Mesh(new THREE.CylinderGeometry(.1,.07,.56,10),coat);up.position.y=-.27;hip.add(up);const knee=new THREE.Group();knee.position.y=-.54;hip.add(knee);
+    const lo=new THREE.Mesh(new THREE.CylinderGeometry(.055,.05,.46,8),coat);lo.position.y=-.23;knee.add(lo);const hoof=new THREE.Mesh(new THREE.CylinderGeometry(.065,.078,.11,10),hoofM);hoof.position.y=-.5;knee.add(hoof);
+    hip.traverse(c=>{if(c.isMesh)c.castShadow=true;});legs.push({hip,knee,front:lz<0});}
+  const tail=new THREE.Group();tail.position.set(0,1.5,1.02);g.add(tail);const tm=new THREE.Mesh(new THREE.CylinderGeometry(.08,.03,.85,8),mane);tm.position.set(0,-.38,.12);tm.rotation.x=.3;tm.castShadow=true;tail.add(tm);
+  g.userData={legs,tail};return g;}
+function groundBelow(x,y,z){const cx=Math.floor(x),cz=Math.floor(z);for(let yy=Math.min(Y-1,Math.floor(y+.6));yy>0;yy--)if(solid(cx,yy-1,cz))return yy;return 1;}
+function buildHorses(){horses.forEach(h=>scene.remove(h.m));horses.length=0;riding=null;
+  G.horses.forEach(d=>{const look=HORSE_LOOKS[d.c%3],m=horseMesh(look);scene.add(m);const y=d.y!=null?d.y:groundBelow(d.x,SURF+14,d.z);horses.push({d,m,name:look.name,x:d.x,y,z:d.z,yaw:d.yaw,ph:Math.random()*6,spd:0,idle:Math.random()*5});});}
+function nearHorse(){let best=null,bd=2.1;for(const h of horses){if(h===riding)continue;const d=Math.hypot(h.x-player.x,h.z-player.z);if(d<bd&&Math.abs(h.y-player.y)<1.6){bd=d;best=h;}}return best;}
+function whinny(){for(let i=0;i<9;i++)setTimeout(()=>tone(950-i*45+(i%2)*140,.08,.045,'sawtooth'),i*50);setTimeout(()=>noise(.4,500,.08,1.5),480);}
+function mount(h){riding=h;const p=player;p.x=h.x;p.z=h.z;p.y=Math.max(p.y,h.y);p.yaw=h.yaw;whinny();
+  once('horse',`You're riding ${h.name}! W A S D to ride, hold Shift to gallop, Space to jump. Press E to get off.`);}
+function dismount(){const h=riding,p=player;riding=null;h.spd=0;const side=[[Math.cos(h.yaw),-Math.sin(h.yaw)],[-Math.cos(h.yaw),Math.sin(h.yaw)]];
+  for(const [sx,sz] of side){const nx=h.x+sx*.95,nz=h.z+sz*.95;if(!solid(Math.floor(nx),Math.floor(p.y+.2),Math.floor(nz))&&!solid(Math.floor(nx),Math.floor(p.y+1.2),Math.floor(nz))){p.x=nx;p.z=nz;break;}}save();}
+function updateHorses(dt,mx,mz){const p=player;horseBob=0;
+  for(const h of horses){const legs=h.m.userData.legs;let moving=0;
+    if(h===riding){h.x=p.x;h.z=p.z;h.y=p.y;const sp=Math.hypot(mx,mz);moving=sp;if(sp>.1){const want=Math.atan2(-mx,-mz);let dy=want-h.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));h.yaw+=dy*Math.min(1,dt*6);}
+      if(p.ground&&sp>.1){hoofT-=dt;if(hoofT<=0){const gal=sp>9;hoofT=gal?.11:.24;noise(.05,1400+Math.random()*500,gal?.16:.12,4);setTimeout(()=>tone(380+Math.random()*80,.04,.05,'triangle'),30);}}
+      if(solid(Math.floor(p.x),Math.floor(p.y+2.6),Math.floor(p.z))){dismount();toast(`Low roof! ${h.name} can't fit, so you hop off.`,2600,true);}}
+    else{const gy=groundBelow(h.x,h.y,h.z);if(h.y>gy+.01)h.y=Math.max(gy,h.y-dt*9);else h.y=gy;h.idle-=dt;if(h.idle<0){h.idle=4+Math.random()*7;if(Math.hypot(h.x-p.x,h.z-p.z)<14)Math.random()<.5?whinny():noise(.5,350,.1,1.2);}}
+    h.spd+=(moving-h.spd)*Math.min(1,dt*5);const s=h.spd;h.ph+=dt*(s>9?13:s>.5?7+s*.4:0);
+    const amp=s>9?.75:s>.5?.42:0;legs.forEach((L,i)=>{const off=s>9?[0,.5,1.6,2.1][i]:[0,Math.PI,Math.PI,0][i];const a=Math.sin(h.ph+off);L.hip.rotation.x=a*amp;L.knee.rotation.x=(L.front?1:-1)*Math.max(0,-Math.cos(h.ph+off))*amp*1.1;});
+    const bob=s>.5?Math.abs(Math.sin(h.ph))*(s>9?.12:.05):Math.sin(time*1.3+h.ph)*.006;if(h===riding)horseBob=bob;
+    h.m.userData.tail.rotation.z=Math.sin(time*(s>.5?6:1.6)+h.ph)*(s>.5?.25:.15);h.m.userData.tail.rotation.x=s>9?.7:s>.5?.35:0;
+    h.m.position.set(h.x,h.y+bob,h.z);h.m.rotation.y=h.yaw;h.m.rotation.z=0;h.d.x=h.x;h.d.y=h.y;h.d.z=h.z;h.d.yaw=h.yaw;}}
 /* ---------- health ---------- */
 let hurtFlash=0,hurtSndT=0;
 function hurt(n,why){player.health-=n;if(why||time-hurtSndT>1){hurtSndT=time;SFX.hurt();hurtFlash=.6;}if(why)toast(why,2600,true);if(player.health<=0)passOut();}
@@ -824,7 +873,7 @@ function openMill(){const n=G.sack.length;let body;
     noise(1.2,300,.6,1);setTimeout(SFX.coins,700);m.disabled=true;p.querySelector('[data-r]').innerHTML=`The stamps pounded your ore to powder. You got <b>${oz.toFixed(2)} oz</b> of gold, worth $${gross}. After the $${fee} mill fee, you get <span class="price">$${net}</span>.`;hud();save();
     if(oz/n>.6)once('rich','That was rich ore! Deeper quartz, and quartz with gold streaks in it, is worth the most.');});}
 function nearDoor(){return DOORS.find(d=>Math.hypot(player.x-d.x,player.z-d.z)<2.2&&Math.abs(player.y-SURF)<.6);}
-function interact(){const cn=nearCannon();if(cn){fireCannon(cn);return;}const rt=nearRat();if(rt&&!nearDoor()){feedRat(rt);return;}const d=nearDoor();if(!d)return;if(d.id==='store')openStore();else openMill();}
+function interact(){if(riding){dismount();return;}const hn=nearHorse();if(hn&&!nearCannon()){mount(hn);return;}const cn=nearCannon();if(cn){fireCannon(cn);return;}const rt=nearRat();if(rt&&!nearDoor()){feedRat(rt);return;}const d=nearDoor();if(!d)return;if(d.id==='store')openStore();else openMill();}
 
 /* ---------- main loop ---------- */
 const dustGeo=new THREE.CircleGeometry(.45,10),dustMat=new THREE.MeshBasicMaterial({color:0x5a1e14,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false});const crackPool=[];
@@ -838,19 +887,19 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   const fw=(keys.has('w')||keys.has('ArrowUp')?1:0)-(keys.has('s')||keys.has('ArrowDown')?1:0),st=(keys.has('d')?1:0)-(keys.has('a')?1:0);
   if(!locked&&active){if(keys.has('ArrowLeft'))p.yaw+=dt*2.2;if(keys.has('ArrowRight'))p.yaw-=dt*2.2;}
   const bodyWet=water(Math.floor(p.x),Math.floor(p.y+.9),Math.floor(p.z))>.45;
-  const speed=(keys.has('Shift')?6.4:4.3)*(1-.025*G.sack.length)*(bodyWet?.5:1);
+  const speed=riding?(keys.has('Shift')?13:6.5)*(bodyWet?.6:1):(keys.has('Shift')?6.4:4.3)*(1-.025*G.sack.length)*(bodyWet?.5:1);
   let mx=0,mz=0;if(active){const sy=Math.sin(p.yaw),cy=Math.cos(p.yaw);mx=(-sy*fw+cy*st);mz=(-cy*fw-sy*st);const l=Math.hypot(mx,mz);if(l>0){mx=mx/l*speed;mz=mz/l*speed;}}
-  const lad=onLadder();
+  const lad=!riding&&onLadder();
   if(lad&&active&&(fw>0||keys.has(' ')))p.vy=3.2*(1-.03*G.sack.length);else if(lad&&active&&keys.has('s'))p.vy=-3;else if(lad&&!p.ground)p.vy=Math.max(p.vy-25*dt,-1.2);
   else if(bodyWet){p.vy=Math.max(p.vy-7*dt,-2.5);if(active&&keys.has(' '))p.vy=Math.min(p.vy+18*dt,3);}
-  else{if(active&&keys.has(' ')&&p.ground)p.vy=8;p.vy=Math.max(p.vy-25*dt,-30);}
+  else{if(active&&keys.has(' ')&&p.ground)p.vy=riding?9:8;p.vy=Math.max(p.vy-25*dt,-30);}
   const steps=Math.ceil(dt/.01);let landV=0;const wasGround=p.ground;
   for(let s=0;s<steps;s++){moveAxis('x',mx*dt/steps);moveAxis('z',mz*dt/steps);p.ground=false;const vy=p.vy;moveAxis('y',p.vy*dt/steps);if(p.ground&&vy<landV)landV=vy;}
   if(landV<-13&&!bodyWet)hurt(Math.round((-landV-13)*7),'Ouch! That was a long fall. Use ladders!');
   if(p.y<-5){p.x=SPAWN.x;p.y=Hc(22,31)+1;p.z=SPAWN.z;}
   if(p.ground&&(mx||mz))bob+=dt*(keys.has('Shift')?13:9);
   const sh=shakeT>0?shakeT*shakeT*.15:0;shakeT=Math.max(0,shakeT-dt);
-  camera.position.set(p.x+(Math.random()-.5)*sh,p.y+EYE+Math.sin(bob)*.035+(Math.random()-.5)*sh,p.z+(Math.random()-.5)*sh);camera.rotation.set(p.pitch,p.yaw,0);
+  camera.position.set(p.x+(Math.random()-.5)*sh,p.y+EYE+(riding?1.0+horseBob:0)+Math.sin(bob)*.035+(Math.random()-.5)*sh,p.z+(Math.random()-.5)*sh);camera.rotation.set(p.pitch,p.yaw,0);
   target=active?raycast(4.8):null;
   const digging=active&&target&&!target.obj&&ITEMS[G.sel].id!=='revolver'&&((mouseL&&!dragLook)||keys.has('f'));
   if(digging){if(digCell!==target.i){digCell=target.i;digP=0;}const t=W[target.i];
@@ -861,7 +910,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   else digP=Math.max(0,digP-dt*2);
   ring.style.setProperty('--p',(digP*100).toFixed(0)+'%');ring.hidden=digP<=0;
   objects.forEach(o=>{if(o.type!==DYN)return;o.fuse-=dt;if(Math.random()<dt*30)burst(o.mesh.position.x,o.mesh.position.y,o.mesh.position.z,0xffd37a,1,1.5,{life:.3,g:-2});if(o.fuse<=0)explode(o);});
-  updateCannons(dt);updateCans(dt);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
+  updateCannons(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
   caveT+=dt;if(caveT>.4){caveCheck(caveT);caveT=0;}
   waterT+=dt;if(waterT>.1){waterTick();waterT=0;}
   wbT+=dt;if(wbT>.25){buildWater();wbT=0;}
@@ -893,7 +942,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   if(bldCheckT>0&&time>=bldCheckT){bldCheckT=-1;buildingCollapse();}decorT-=dt;if(decorT<=0){decorT=.3;checkDecor();}updateTown(dt);
   if(grassDirty){grassT-=dt;if(grassT<=0){grassT=1;buildGrass();}}
   beamMat.uniforms.op.value=.05*under*(ITEMS[G.sel]?1:1);
-  if(active){if(p.ground&&(mx||mz)){stepT-=dt;if(stepT<=0){SFX.step();stepT=keys.has('Shift')?.3:.44;}}
+  if(active){if(p.ground&&(mx||mz)&&!riding){stepT-=dt;if(stepT<=0){SFX.step();stepT=keys.has('Shift')?.3:.44;}}
     if(under>.6){dripT-=dt;if(dripT<=0){SFX.drip();dripT=.8+Math.random()*3.5;}farT-=dt;if(farT<=0){SFX.far();farT=25+Math.random()*40;}}
     if(p.air<55||p.heat>60){breathT-=dt;if(breathT<=0){SFX.breath();breathT=p.air<25?.9:1.5;}}}flash.intensity*=Math.pow(.03,dt);
   const hTop=Hc(Math.floor(p.x),Math.floor(p.z));const below=Math.max(0,hTop+1-p.y);const dLocal=hTop-Math.floor(p.y);
@@ -917,15 +966,15 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   vig.style.boxShadow=`${blue}${grey}inset 0 0 ${80+redA*120}px ${redA*60}px rgba(160,20,10,${redA})`;
   const door=active&&nearDoor();const pr=$('#prompt');
   const nr=active&&!door&&nearRat();
-  const cnP=active&&!door&&nearCannon();
-  if(door){pr.innerHTML=`<kbd>E</kbd>${door.label}`;pr.hidden=false;}else if(cnP){pr.innerHTML=cnP.cool>0?'Reloading...':'<kbd>E</kbd>Fire the cannon where you look';pr.hidden=false;}
+  const cnP=active&&!door&&nearCannon(),hP=active&&!door&&!cnP&&(riding||nearHorse());
+  if(hP){pr.innerHTML=riding?`<kbd>E</kbd>Get off ${riding.name}`:`<kbd>E</kbd>Ride ${hP.name}`;pr.hidden=false;}else if(door){pr.innerHTML=`<kbd>E</kbd>${door.label}`;pr.hidden=false;}else if(cnP){pr.innerHTML=cnP.cool>0?'Reloading...':'<kbd>E</kbd>Fire the cannon where you look';pr.hidden=false;}
   else if(nr){pr.innerHTML='<kbd>E</kbd>Give the rat a crumb';pr.hidden=false;}
   else if(target&&target.obj&&active){const o=objects.get(target.i);pr.innerHTML=o&&o.type===DYN?'Fuse is lit!':'Left click to pick it back up';pr.hidden=false;}
   else pr.hidden=true;
   if(toastT>0){toastT-=dt;if(toastT<=0)$('#toast').hidden=true;}
   saveT+=dt;if(saveT>12){saveT=0;save();}
   renderer.render(scene,camera);requestAnimationFrame(frame);}
-init(true);signs();buildTown();buildRange();buildDecor();resize();
+init(true);signs();buildTown();buildRange();buildHorses();buildDecor();resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
 window.__ueg={decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
 requestAnimationFrame(frame);

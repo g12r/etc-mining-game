@@ -19,7 +19,7 @@ Play online at https://g12r.github.io/etc-mining-game/, or open `index.html` in 
 | `Space` | Jump. Walk into a ladder and hold `W` to climb. |
 | `Q` | Light dynamite where you are looking (or at your feet), then run! You start with 3 sticks. |
 | `1`–`9` | Choose an item |
-| `E` | Use the store or mill, feed a rat, or fire a cannon you are standing next to |
+| `E` | Use the store or mill, feed a rat, fire a cannon, or get on and off a horse |
 | `Esc` | Pause and get your mouse back |
 
 If the mouse will not lock, drag to look and use `F` to dig.
@@ -38,6 +38,8 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **The town.** You can dig or blast anything in town, but the townsfolk bill you $1 for every board you wreck. The carpenter fixes it after a while. Knock out what holds a building up and it falls down. Chop a tree to get a timber set. Walk inside: the store has a shopkeeper at the counter, and the mill has a working stamp battery, a steam boiler and the assayer.
 - **Cannons.** Put one down with `R` (item 8), stand next to it and press `E`. It aims at whatever your crosshair is on and the ball blows up where it lands.
 - **Revolver.** Item 9. Left click shoots, `R` reloads six shots. Knock the tin cans off the target fence by the store, or set off a lit stick of dynamite from a safe distance.
+- **Horses.** Nugget, Midnight and Dusty are tied up east of the store. Press `E` to ride, hold `Shift` to gallop.
+- **Shoot to assay.** Shoot a rock and the gold in it pops up on screen.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game

@@ -49,8 +49,8 @@ cd tests && node smoke.js
 1. Change `src/game.js` or `src/head.html`.
 2. Build, then run the smoke test. For anything he will see or feel, also drive it in a headless browser and look at a screenshot before telling him it is done. `window.__ueg` exposes the game's insides for that.
 3. Show him. Publish `artifact.html` as an artifact so he can play right away. The game is published at https://claude.ai/artifact/CiA2R61e7n7WeLSWm5oxZN. It belongs to the account, so a new session can update it: read it with the Artifact tool first, then publish to that URL so Emmett keeps the same link.
-4. Bump the version in `src/head.html` (the "Version 0.5" line) when a batch of his requests lands, and add the requests to `docs/requests.md`.
-5. Commit to `main` and push. No pull requests for this project. Write the commit message so that the history reads as the story of the game.
+4. Bump the version in `src/head.html` (the "Version 0.6" line) when a batch of his requests lands, and add the requests to `docs/requests.md`.
+5. Commit to `main` and push. No pull requests for this project. The parent confirmed this in session; the push to `main` also republishes the GitHub Pages site. Write the commit message so that the history reads as the story of the game.
 
 Things that are easy to get wrong:
 
@@ -62,4 +62,4 @@ Things that are easy to get wrong:
 
 ## Where the game stands
 
-Version 0.5. Everything in `docs/requests.md` is built and working as far as scripted tests show. Nobody has written down a list of what Emmett wants next; ask him.
+Version 0.6. Everything in `docs/requests.md` is built and working as far as scripted tests show. Nobody has written down a list of what Emmett wants next; ask him.
