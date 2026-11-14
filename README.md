@@ -48,6 +48,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **The second street.** North of the saloon: the sheriff and jail, the bank, the doctor (heals you for $5) and the blacksmith (a steel pick for $150).
 - **Musket.** Press `9` three times. One huge shot, then a slow reload with `R`.
 - **The railroad.** A steam train runs a loop around the claim and stops at EMMETT DEPOT by town. Press `E` near it to ride, `E` to hop off. Stay off the tracks!
+- **Time bomb.** Press `5` twice, then `R` to set it. 15 seconds later it goes off, big enough to wreck the train or blow up the track.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game

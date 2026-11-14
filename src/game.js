@@ -22,7 +22,7 @@ const AIR=0,GRASS=1,DIRT=2,ROCK=3,HARD=4,QUARTZ=5,RICH=6,BED=7,RUBBLE=8,PLANK=9,
 const ALLOW={1:2,2:2,3:3,4:4,5:3,6:4,8:1,9:3,10:3,12:3};
 const COLOR={1:0x5c8f3a,2:0x6f4b2e,3:0x7a7469,4:0x4b4753,5:0xd8d2c4,6:0xe8d48a,7:0x2a2628,8:0x6b5a49,9:0xa0703f,10:0x6e4a2a,12:0x5b3a28};
 const NONNET={9:1,10:1,12:1};
-const LADDER=1,TIMBER=2,PUMP=3,FAN=4,DYN=5,CANNON=6,ELEV=7;
+const LADDER=1,TIMBER=2,PUMP=3,FAN=4,DYN=5,CANNON=6,ELEV=7,BOMB=8;
 const idx=(x,y,z)=>(y*Z+z)*X+x;
 const inB=(x,y,z)=>x>=0&&y>=0&&z>=0&&x<X&&y<Y&&z<Z;
 const depthG=y=>BASE-y;
@@ -665,7 +665,7 @@ const beamMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blendi
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.04,1.6,7,24,1,true),beamMat);beam.rotation.x=Math.PI/2;beam.position.set(0,.06,-3.6);camera.add(beam);
 /* ---------- state ---------- */
 function freshState(){generate();carveRail();
-  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36,elevator:1,shells:20,balls:15},cyl:6,sh:9,mk:1,gun:'revolver',saloon:1,town2:1,rail:1,patients:[],horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
+  G={money:100000000,sack:[],cap:8,rock:0,tool:'pick',lantern:13,pack:{ladder:0,timber:0,dyn:3,pump:0,fan:0,cannon:2,revolver:36,elevator:1,shells:20,balls:15,bomb:3},cyl:6,sh:9,mk:1,gun:'revolver',saloon:1,town2:1,rail:1,patients:[],horses:[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}],sel:0,seen:{gift:1,rich:1}};
   player={x:SPAWN.x,y:Hc(22,31)+1,z:SPAWN.z,yaw:-Math.PI/2,pitch:0,vy:0,ground:false,health:100,air:100,heat:0};}
 const enc=u=>{let s='';const CH=8192;for(let i=0;i<u.length;i+=CH)s+=String.fromCharCode.apply(null,u.subarray(i,i+CH));return btoa(s);};
 const rle=u=>{const o=[];for(let i=0;i<u.length;){const v=u[i];let n=1;while(n<255&&i+n<u.length&&u[i+n]===v)n++;o.push(v,n);i+=n;}return Uint8Array.from(o);};
@@ -673,7 +673,7 @@ const unrle=(b,len)=>{const u=new Uint8Array(len);let k=0;for(let i=0;i<b.length
 const dec=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
 function save(){try{const wat=[];openSet.forEach(i=>{if(WAT[i]>.02)wat.push(i,Math.round(WAT[i]*100));});
   localStorage.setItem(SAVE,JSON.stringify({v:2,X,Z,W:enc(rle(W)),H:Array.from(H),trees,G,player:{x:player.x,y:player.y,z:player.z,yaw:player.yaw,pitch:player.pitch,health:player.health,air:player.air,heat:player.heat},
-    obj:[...new Set(objects.values())].filter(o=>o.type!==DYN).map(o=>({i:o.i,type:o.type,rot:o.rot||0,set:o.set||null})),wat,rats:rats.filter(r=>r.buddy).map(r=>({x:r.x,y:r.y,z:r.z,name:r.name}))}));}catch(e){}}
+    obj:[...new Set(objects.values())].filter(o=>o.type!==DYN&&o.type!==BOMB).map(o=>({i:o.i,type:o.type,rot:o.rot||0,set:o.set||null})),wat,rats:rats.filter(r=>r.buddy).map(r=>({x:r.x,y:r.y,z:r.z,name:r.name}))}));}catch(e){}}
 // a mine saved when the claim was 64 x 64: make the big claim, then put the old mine back exactly where it was
 function growOldMine(d,w){generate(true);const oi=i=>{const x=i%OLD,z=Math.floor(i/OLD)%OLD,y=Math.floor(i/(OLD*OLD));return idx(x,y,z);};
   for(let y=0;y<Y;y++)for(let z=0;z<OLD;z++)for(let x=0;x<OLD;x++)W[idx(x,y,z)]=w[(y*OLD+z)*OLD+x];
@@ -682,7 +682,7 @@ function growOldMine(d,w){generate(true);const oi=i=>{const x=i%OLD,z=Math.floor
   (d.obj||[]).forEach(o=>{o.i=oi(o.i);if(o.set&&o.set.cells)o.set.cells=o.set.cells.map(oi);});
   if(d.wat)for(let k=0;k<d.wat.length;k+=2)d.wat[k]=oi(d.wat[k]);
   setTimeout(()=>toast('Your claim is 4 times bigger now! New land and the Big Range mountains are out past the old edges. Your mine is just where you left it.',6000),1500);}
-function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);if(d.v===2){if(d.X!==X||d.Z!==Z)return false;W=unrle(dec(d.W),N);H=Int16Array.from(d.H);trees=d.trees||[];}else{const w=dec(d.W);if(w.length===OLD*Y*OLD)growOldMine(d,w);else if(w.length===N){W=w;H=Int16Array.from(d.H);trees=d.trees||[];}else return false;}G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(G.pack.elevator==null)G.pack.elevator=1;if(G.pack.shells==null){G.pack.shells=20;G.sh=9;G.gun='revolver';}if(!G.seen.pump9){G.seen.pump9=1;G.sh=9;}if(G.pack.balls==null){G.pack.balls=15;G.mk=1;}if(!G.saloon){G.saloon=1;G.town2=1;buildSaloonLot();}if(!G.town2){G.town2=1;buildSaloonLot(38);}if(!G.rail){G.rail=1;carveRail();}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
+function load(){try{const raw=localStorage.getItem(SAVE);if(!raw)return false;const d=JSON.parse(raw);if(d.v===2){if(d.X!==X||d.Z!==Z)return false;W=unrle(dec(d.W),N);H=Int16Array.from(d.H);trees=d.trees||[];}else{const w=dec(d.W);if(w.length===OLD*Y*OLD)growOldMine(d,w);else if(w.length===N){W=w;H=Int16Array.from(d.H);trees=d.trees||[];}else return false;}G=d.G;if(G.pack.cannon==null)G.pack.cannon=2;if(G.pack.revolver==null){G.pack.revolver=36;G.cyl=6;}if(G.pack.elevator==null)G.pack.elevator=1;if(G.pack.shells==null){G.pack.shells=20;G.sh=9;G.gun='revolver';}if(!G.seen.pump9){G.seen.pump9=1;G.sh=9;}if(G.pack.balls==null){G.pack.balls=15;G.mk=1;}if(G.pack.bomb==null)G.pack.bomb=3;if(!G.saloon){G.saloon=1;G.town2=1;buildSaloonLot();}if(!G.town2){G.town2=1;buildSaloonLot(38);}if(!G.rail){G.rail=1;carveRail();}if(!G.horses)G.horses=[{x:22.4,z:12.6,yaw:Math.PI/2,c:0},{x:22.4,z:14.4,yaw:Math.PI/2,c:1},{x:22.4,z:16.2,yaw:Math.PI/2,c:2}];if(!G.seen.gift){G.seen.gift=1;G.pack.dyn+=3;}if(!G.seen.rich){G.seen.rich=1;G.money=Math.max(G.money,100000000);}
   player=Object.assign({vy:0,ground:false},d.player);return d;}catch(e){return false;}}
 function init(fromSave){
   objects&&objects.forEach(o=>scene.remove(o.mesh));objects=new Map();stress=new Map();items.forEach(it=>scene.remove(it.m));items=[];falling.forEach(f=>scene.remove(f.m));falling=[];fumes=[];
@@ -713,8 +713,9 @@ function addObject(i,type,rot,set){const [x,y,z]=cellXYZ(i);let m;
     const st=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,.5,8),MAT.steel);st.position.y=-.45;m.add(st);m.rotation.y=rot||0;m.position.set(x+.5,y+.55,z+.5);}
   else if(type===DYN){m=new THREE.Group();m.add(glowSprite(0xffb347,.7));for(let k=0;k<3;k++){const s=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.45,10),MAT.tnt);s.position.set((k-1)*.15,-.27,0);m.add(s);}m.position.set(x+.5,y+.5,z+.5);}
   else if(type===ELEV){if(!set)return null;m=elevMesh(set);}
+  else if(type===BOMB){m=bombMesh();m.rotation.y=rot||0;m.position.set(x+.5,y,z+.5);}
   else if(type===CANNON){m=cannonMesh();m.rotation.y=rot||0;m.position.set(x+.5,y,z+.5);}
-  m.traverse(c=>{if(c.isMesh)c.castShadow=true;});scene.add(m);const o={i,type,rot:rot||0,mesh:m};if(type===ELEV){o.cy=set.top;o.dir=0;o.target=set.top;}if(type===DYN)o.fuse=5;if(set){o.set=set;o.cells=set.cells;set.cells.forEach(c=>objects.set(c,o));}else objects.set(i,o);if(type===FAN)airD=null;return o;}
+  m.traverse(c=>{if(c.isMesh)c.castShadow=true;});scene.add(m);const o={i,type,rot:rot||0,mesh:m};if(type===BOMB){o.fuse=15;o.tick=1;o.label=document.createElement('div');o.label.className='npc down';$('.hud').appendChild(o.label);}if(type===ELEV){o.cy=set.top;o.dir=0;o.target=set.top;}if(type===DYN)o.fuse=5;if(set){o.set=set;o.cells=set.cells;set.cells.forEach(c=>objects.set(c,o));}else objects.set(i,o);if(type===FAN)airD=null;return o;}
 function timberSet(x,y,z,lookX){let fy=y;while(fy>0&&get(x,fy-1,z)===AIR&&y-fy<3)fy--;if(!solid(x,fy-1,z))return 'A timber set needs solid ground under it.';
   const run=(dx,dz)=>{let a=0,b=0;while(a<6&&get(x-dx*(a+1),fy,z-dz*(a+1))===AIR&&solid(x-dx*(a+1),fy-1,z-dz*(a+1)))a++;while(b<6&&get(x+dx*(b+1),fy,z+dz*(b+1))===AIR&&solid(x+dx*(b+1),fy-1,z+dz*(b+1)))b++;return [a,b];};
   const rx=run(1,0),rz=run(0,1),lx=rx[0]+rx[1]+1,lz=rz[0]+rz[1]+1;const axis=lx!==lz?(lx<lz?'x':'z'):(lookX?'z':'x');const r=axis==='x'?rx:rz;
@@ -729,12 +730,12 @@ function setMesh(g){const grp=new THREE.Group();const h2=g.capY-g.fy;const P=(a,
   const span=g.a1-g.a0+1;const cap=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,span,10),MAT.log);cap.position.set(...P(g.a0+span/2,g.capY-.2));cap.rotation[g.axis==='x'?'z':'x']=Math.PI/2;cap.castShadow=true;cap.receiveShadow=true;grp.add(cap);
   for(let k=-2;k<=2;k++){const b=new THREE.Mesh(new THREE.BoxGeometry(g.axis==='x'?span:.24,.05,g.axis==='x'?.24:span),MAT.board);const bp=P(g.a0+span/2,g.capY-.02);if(g.axis==='x')b.position.set(bp[0],bp[1],bp[2]+k*.28);else b.position.set(bp[0]+k*.28,bp[1],bp[2]);b.receiveShadow=true;grp.add(b);}
   return grp;}
-function removeObject(i){const o=objects.get(i);if(!o)return null;scene.remove(o.mesh);if(o.cells)o.cells.forEach(c=>objects.delete(c));else objects.delete(i);if(o.type===FAN)airD=null;return o;}
+function removeObject(i){const o=objects.get(i);if(!o)return null;scene.remove(o.mesh);if(o.label&&o.label.parentNode)o.label.parentNode.removeChild(o.label);if(o.cells)o.cells.forEach(c=>objects.delete(c));else objects.delete(i);if(o.type===FAN)airD=null;return o;}
 
 /* ---------- HUD ---------- */
 const ITEMS=[{id:'tool',k:'1'},{id:'ladder',k:'2',name:'Ladder'},{id:'timber',k:'3',name:'Timber'},{id:'rock',k:'4',name:'Rock'},{id:'dyn',k:'5',name:'Dynamite'},{id:'pump',k:'6',name:'Pump'},{id:'fan',k:'7',name:'Fan'},{id:'cannon',k:'8',name:'Cannon'},{id:'revolver',k:'9',name:'Revolver'},{id:'elevator',k:'0',name:'Elevator'}];
-function count(id){return id==='rock'?G.rock:id==='tool'?'':id==='revolver'?(G.gun==='shotgun'?`${G.sh}/${G.pack.shells}`:G.gun==='musket'?`${G.mk}/${G.pack.balls}`:`${G.cyl}/${G.pack.revolver}`):G.pack[id];}
-function renderHotbar(){$('#hotbar').innerHTML=ITEMS.map((it,i)=>`<button class="slot" type="button" data-i="${i}" aria-pressed="${G.sel===i}"><span class="k">${it.k}</span>${it.id==='tool'?(G.tool==='drill'?'Rock drill':'Pickaxe'):it.id==='revolver'&&G.gun==='shotgun'?'Shotgun':it.id==='revolver'&&G.gun==='musket'?'Musket':it.name}<span class="n">${it.id==='tool'?'&nbsp;':count(it.id)}</span></button>`).join('');
+function count(id){return id==='rock'?G.rock:id==='tool'?'':id==='dyn'&&G.dynMode==='bomb'?G.pack.bomb:id==='revolver'?(G.gun==='shotgun'?`${G.sh}/${G.pack.shells}`:G.gun==='musket'?`${G.mk}/${G.pack.balls}`:`${G.cyl}/${G.pack.revolver}`):G.pack[id];}
+function renderHotbar(){$('#hotbar').innerHTML=ITEMS.map((it,i)=>`<button class="slot" type="button" data-i="${i}" aria-pressed="${G.sel===i}"><span class="k">${it.k}</span>${it.id==='tool'?(G.tool==='drill'?'Rock drill':'Pickaxe'):it.id==='revolver'&&G.gun==='shotgun'?'Shotgun':it.id==='revolver'&&G.gun==='musket'?'Musket':it.id==='dyn'&&G.dynMode==='bomb'?'Time bomb':it.name}<span class="n">${it.id==='tool'?'&nbsp;':count(it.id)}</span></button>`).join('');
   $('#hotbar').querySelectorAll('.slot').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();G.sel=+b.dataset.i;renderHotbar();}));}
 $('#hotbar').addEventListener('mousedown',e=>e.stopPropagation());
 let toastT=0;function toast(t,ms,warn){const el=$('#toast');el.textContent=t;el.classList.toggle('warn',!!warn);el.hidden=false;toastT=(ms||2800)/1000;}
@@ -758,7 +759,9 @@ window.addEventListener('mousemove',e=>{if(locked){player.yaw-=e.movementX*.0025
   else if(dragLook&&mouseL){player.yaw-=(e.clientX-lastMX)*.005;player.pitch=Math.max(-1.5,Math.min(1.5,player.pitch-(e.clientY-lastMY)*.005));lastMX=e.clientX;lastMY=e.clientY;}});
 window.addEventListener('keydown',e=>{if(!started||panel){if(panel&&e.key==='Escape')closePanel();return;}const k=e.key.length===1?e.key.toLowerCase():e.key;
   if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))e.preventDefault();keys.add(k);if(k===' ')jumpAt=time;
-  if(k>='1'&&k<='9'){if(k==='9'&&G.sel===8){G.gun={revolver:'shotgun',shotgun:'musket',musket:'revolver'}[G.gun]||'revolver';tone(700,.05,.06,'square');toast({revolver:'Revolver! 6 shots. Press 9 again for the shotgun.',shotgun:'Lever-action shotgun! 9 shots. Press 9 again for the musket.',musket:'Musket! One big shot, slow to reload. Press 9 again for the revolver.'}[G.gun],1800);}
+  if(k>='1'&&k<='9'){if(k==='5'&&G.sel===4){G.dynMode=G.dynMode==='bomb'?'dyn':'bomb';tone(700,.05,.06,'square');toast(G.dynMode==='bomb'?'Time bomb! R puts it down, and it goes off in 15 seconds. Press 5 again for dynamite.':'Dynamite! Press 5 again for the time bomb.',2200);}
+    else if(k==='5')once('bombswap','Dynamite ready. Press 5 again for the time bomb!');
+    if(k==='9'&&G.sel===8){G.gun={revolver:'shotgun',shotgun:'musket',musket:'revolver'}[G.gun]||'revolver';tone(700,.05,.06,'square');toast({revolver:'Revolver! 6 shots. Press 9 again for the shotgun.',shotgun:'Lever-action shotgun! 9 shots. Press 9 again for the musket.',musket:'Musket! One big shot, slow to reload. Press 9 again for the revolver.'}[G.gun],1800);}
     else if(k==='9')once('gunswap','Revolver ready. Press 9 again for the shotgun, and again for the musket!');G.sel=+k-1;renderHotbar();}if(k==='0'){G.sel=9;renderHotbar();}if(k==='e')interact();if(k==='q')throwDynamite();if(k==='r')placeAction();if(k==='f')clickDig();});
 window.addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;keys.delete(k);});
 window.addEventListener('blur',()=>{keys.clear();mouseL=false;});
@@ -798,7 +801,7 @@ function headUnder(){return water(Math.floor(camera.position.x),Math.floor(camer
 function clickDig(){if(ITEMS[G.sel].id==='revolver'){shoot();return;}const h=raycast(4.8);if(!h)return;if(h.obj){pickUp(h.i);}}
 function pickUp(i){const o=objects.get(i);if(!o)return;if(o.type===ELEV&&inCage(o,player)){toast('Step out of the cage first.',1500);return;}if(o.type===DYN){toast('The fuse is lit! Run!',1500,true);return;}
   if(o.type===TIMBER){removeObject(i);G.pack.timber++;}
-  else{removeObject(i);G.pack[['','ladder','timber','pump','fan','','cannon','elevator'][o.type]]++;}SFX.place();renderHotbar();}
+  else{removeObject(i);if(o.type===BOMB){toast('Phew! You defused the time bomb.',1800);}G.pack[['','ladder','timber','pump','fan','','cannon','elevator','bomb'][o.type]]++;}SFX.place();renderHotbar();}
 // how much gold a block holds; fixed per block, so what a bullet shows is what you get when you dig it
 const oreGrade=(t,y,x,z)=>{const r=x==null?Math.random():jit(x,y,z,21)+.5;return t===RICH?.8+r*1.4:(.12+r*.3)*(1+depthG(y)*.03);};
 function breakBlock(x,y,z){const t=get(x,y,z);setBlock(x,y,z,AIR);SFX.brk();burst(x+.5,y+.5,z+.5,COLOR[t]||0x777777,12,3);
@@ -829,6 +832,7 @@ function placeAction(){if(!started||panel)return;const it=ITEMS[G.sel];
   else if(it.id==='ladder'){let rot=0;if(h&&h.ny===0)rot=Math.atan2(h.nx,h.nz);else rot=Math.round(p.yaw/(Math.PI/2))*(Math.PI/2);addObject(i,LADDER,rot);G.pack.ladder--;}
   else if(it.id==='timber'){const fw=new THREE.Vector3();camera.getWorldDirection(fw);const r=timberSet(x,y,z,Math.abs(fw.x)>Math.abs(fw.z));if(typeof r==='string'){toast(r,3000);return;}
     addObject(r.cells[0],TIMBER,0,r);G.pack.timber--;once('timber','Timber set in! The posts and cap beam hold up the roof across the whole tunnel.');}
+  else if(it.id==='dyn'&&G.dynMode==='bomb'){if(!solid(x,y-1,z)){toast('Set the time bomb on the ground.',1800);return;}addObject(i,BOMB,p.yaw);G.pack.bomb--;toast('Time bomb set: 15 seconds! Left click it to defuse.',2600,true);tone(1400,.08,.08,'square');}
   else if(it.id==='dyn'){addObject(i,DYN);G.pack.dyn--;toast('Fuse lit! Get away, at least 4 steps!',2500,true);SFX.hiss();}
   else if(it.id==='pump'){if(!solid(x,y-1,z)){toast('Set the pump on the floor.');return;}addObject(i,PUMP);G.pack.pump--;once('pump','Pump running. It drains water all around it.');}
   else if(it.id==='elevator'){const r=sinkShaft(x,y,z);if(typeof r==='string'){toast(r,3000,true);return;}addObject(i,ELEV,0,r);G.pack.elevator--;
@@ -897,9 +901,9 @@ function airAt(x,y,z){if(!inB(x,y,z))return 0;const i=idx(x,y,z);if(!openSet.has
 
 /* ---------- explosions ---------- */
 function explode(o){const [cx,cy,cz]=cellXYZ(o.i);removeObject(o.i);explodeAt(cx,cy,cz);}
-function explodeAt(cx,cy,cz){const R=2.7;for(const b of bandits)if(b.state!=='flee'&&Math.hypot(b.x-cx,b.z-cz)<7){b.state='flee';b.yell=1;}for(const m of miners.slice()){const md=Math.hypot(m.x-cx-.5,m.y+.8-cy-.5,m.z-cz-.5);if(md<5)hurtMiner(m,95*(1-md/5));}
-  for(let x=cx-3;x<=cx+3;x++)for(let y=cy-3;y<=cy+3;y++)for(let z=cz-3;z<=cz+3;z++){if(!inB(x,y,z))continue;const d=Math.hypot(x-cx,y-cy,z-cz);if(d>R)continue;
-    const i=idx(x,y,z);const ob=objects.get(i);if(ob&&ob.type!==DYN)removeObject(i);const t=W[i];if(!t||t===BED)continue;
+function explodeAt(cx,cy,cz,R0){const R=R0||2.7,RC=Math.ceil(R);trainBlast(cx,cy,cz,R);for(const b of bandits)if(b.state!=='flee'&&Math.hypot(b.x-cx,b.z-cz)<7){b.state='flee';b.yell=1;}for(const m of miners.slice()){const md=Math.hypot(m.x-cx-.5,m.y+.8-cy-.5,m.z-cz-.5);if(md<5)hurtMiner(m,95*(1-md/5));}
+  for(let x=cx-RC;x<=cx+RC;x++)for(let y=cy-RC;y<=cy+RC;y++)for(let z=cz-RC;z<=cz+RC;z++){if(!inB(x,y,z))continue;const d=Math.hypot(x-cx,y-cy,z-cz);if(d>R)continue;
+    const i=idx(x,y,z);const ob=objects.get(i);if(ob&&ob.type===BOMB)ob.fuse=Math.min(ob.fuse,.15);else if(ob&&ob.type!==DYN)removeObject(i);const t=W[i];if(!t||t===BED)continue;
     setBlock(x,y,z,AIR);if(t===QUARTZ||t===RICH)spawnItem(x+.5,y+.5,z+.5,oreGrade(t,y,x,z));if(Math.random()<.4)burst(x+.5,y+.5,z+.5,COLOR[t],3,8);}
   burst(cx+.5,cy+.5,cz+.5,0xffb347,40,14,{life:.5,g:2});burst(cx+.5,cy+.5,cz+.5,0x777777,40,4,{life:2.5,g:-1,vy:.5});
   flash.position.set(cx+.5,cy+.5,cz+.5);flash.intensity=6;shakeT=.8;SFX.boom();
@@ -1262,7 +1266,7 @@ function buildRailroad(){const S=SURF;
   const rails=new THREE.InstancedMesh(railG,MAT.iron,RAIL.length*2);let nt=0,nr=0;
   for(let i=0;i<RAIL.length;i++){const a=railAt(i*.25+.125);if(i%3===0&&nt<ties.count){dm.position.set(a.x,RAIL_Y+.04,a.z);dm.rotation.set(0,a.yaw,0);dm.updateMatrix();ties.setMatrixAt(nt++,dm.matrix);}
     for(const sd of [-.72,.72]){dm.position.set(a.x+Math.cos(a.yaw)*sd,RAIL_Y+.14,a.z-Math.sin(a.yaw)*sd);dm.rotation.set(0,a.yaw,0);dm.updateMatrix();rails.setMatrixAt(nr++,dm.matrix);}}
-  ties.count=nt;rails.count=nr;ties.receiveShadow=rails.receiveShadow=true;scene.add(ties);scene.add(rails);
+  ties.count=nt;rails.count=nr;railMeshes={ties,rails};ties.receiveShadow=rails.receiveShadow=true;scene.add(ties);scene.add(rails);
   // timber portals where the track goes into a hill
   let wasRoof=solid(Math.floor(RAIL[0][0]),RAIL_Y+4,Math.floor(RAIL[0][1]));
   for(let i=4;i<RAIL.length;i+=4){const [px,pz]=RAIL[i];const roof=solid(Math.floor(px),RAIL_Y+4,Math.floor(pz));if(roof!==wasRoof){const a=railAt(i*.25),k=kit();
@@ -1275,18 +1279,19 @@ function buildRailroad(){const S=SURF;
   k.cyl(MAT.iron,.09,.09,1.6,26.8,S+3.5,52,0,0,1.2);piece(k,[[21,BASE,47],[27,BASE,52]],true);
   paintSign('EMMETT DEPOT',3,.55,21.5,S+2.55,47,-Math.PI/2,[[21,BASE,47]]);
   const cars=TRAIN_CARS.map(c=>{const m=railCar(c.k);scene.add(m);return Object.assign({m},c);});
-  train={s:(st-35+RAIL_LEN)%RAIL_LEN,v:0,cars,stopAt:st,wait:0,chuffT:0,puffT:0,whistled:false,puffs:[]};}
+  train={s:(st-35+RAIL_LEN)%RAIL_LEN,v:0,cars,stopAt:st,wait:0,chuffT:0,puffT:0,whistled:false,puffs:[],wreck:null,broken:null};}
 function railNear(x,z){let best=0,bd=1e9;RAIL.forEach((p,i)=>{const d=Math.hypot(p[0]-x,p[1]-z);if(d<bd){bd=d;best=i;}});return best*.25;}
 function whistle(v){const f=[440,554,659];f.forEach(h=>tone(h,1.1,.05*v,'sawtooth',h*.97));setTimeout(()=>f.forEach(h=>tone(h,.7,.04*v,'sawtooth',h*.96)),1250);}
 function nearTrain(){if(!train)return false;const p=player;return train.cars.some(c=>Math.hypot(c.m.position.x-p.x,c.m.position.z-p.z)<3.4&&Math.abs(RAIL_Y-p.y)<2);}
 function hopOn(){onTrain=true;toast(train.v<.5?'All aboard! You climbed into the ore car. E to hop off.':'You jumped onto the moving train! E to hop off.',2600);whistle(1);}
 function hopOff(){onTrain=false;const c=train.cars.find(c=>c.ride),a=railAt(train.s+c.off),p=player;p.x=a.x+Math.cos(a.yaw)*2.4;p.z=a.z-Math.sin(a.yaw)*2.4;p.y=groundBelow(p.x,RAIL_Y+3,p.z);p.vy=0;
   if(train.v>4)hurt(8,'Ow! Jumping off a moving train is rough.');}
-function updateTrain(dt){const T=train;if(!T)return;const p=player;
+function updateTrain(dt){const T=train;if(!T)return;const p=player;if(T.wreck){updateWreck(dt);return;}
   // slow into the depot, wait, then pull out
   let ahead=((T.stopAt-T.s)%RAIL_LEN+RAIL_LEN)%RAIL_LEN;if(ahead>RAIL_LEN-2)ahead=999;let target=9;
   if(T.wait>0){T.wait-=dt;target=0;if(T.wait<=0){T.s+=.5;whistle(1);}}else if(ahead<40){target=Math.max(.8,Math.min(9,ahead*.35));if(ahead<.4){T.wait=10;T.v=0;target=0;}}
   if(!T.whistled&&ahead<45&&ahead>30){T.whistled=true;whistle(Math.max(.2,1-Math.hypot(railAt(T.s).x-p.x,railAt(T.s).z-p.z)/80));}if(ahead>50)T.whistled=false;
+  if(T.broken){const gap=((T.broken.s-T.s)%RAIL_LEN+RAIL_LEN)%RAIL_LEN;if(gap<45){target=Math.min(target,Math.max(0,(gap-6)*.4));if(gap<7)T.v=Math.min(T.v,.3);}T.broken.t-=dt;if(T.broken.t<=0)fixTrack();}
   T.v+=(target-T.v)*Math.min(1,dt*(target<T.v?1.2:.35));T.s=(T.s+T.v*dt)%RAIL_LEN;
   let near=1e9;for(const c of T.cars){const a=railAt(T.s+c.off);c.m.position.set(a.x,RAIL_Y,a.z);c.m.rotation.y=a.yaw;for(const w of c.m.userData.wheels)w.w.rotation.x-=T.v*dt/w.r;
     const d=Math.hypot(a.x-p.x,a.z-p.z);near=Math.min(near,d);
@@ -1299,6 +1304,52 @@ function updateTrain(dt){const T=train;if(!T)return;const p=player;
     sp.position.set(sx,RAIL_Y+3,sz);sp.scale.setScalar(.6);scene.add(sp);T.puffs.push({sp,t:0});}
   for(let i=T.puffs.length-1;i>=0;i--){const P=T.puffs[i];P.t+=dt;P.sp.position.y+=dt*(1.2+P.t*.3);P.sp.position.x+=dt*.5;P.sp.scale.setScalar(.6+P.t*1.4);P.sp.material.opacity=Math.max(0,.5*(1-P.t/3));if(P.t>3){scene.remove(P.sp);P.sp.material.dispose();T.puffs.splice(i,1);}}
   if(onTrain){const c=T.cars.find(c=>c.ride),a=railAt(T.s+c.off);p.x=a.x;p.z=a.z;p.y=RAIL_Y+1.05;p.vy=0;p.ground=true;}}
+/* ---------- time bombs, and wrecking the train ---------- */
+function bombMesh(){const g=new THREE.Group(),k=kit(),red=new THREE.MeshStandardMaterial({color:0xa02818,roughness:.6});
+  for(let i=0;i<4;i++)k.cyl(red,.075,.075,.5,-.24+i*.16,.25,0);k.box(TM.black,.66,.06,.18,0,.4,0);k.box(TM.black,.66,.06,.18,0,.1,0);
+  k.cyl(TM.brass,.14,.14,.07,0,.3,.13,Math.PI/2,0,0,18);k.cyl(TM.white,.12,.12,.072,0,.3,.13,Math.PI/2,0,0,18);for(const sx of [-.09,.09])k.ball(TM.brass,.05,sx,.46,.13);
+  k.box(TM.black,.012,.08,.012,0,.33,.17);k.box(TM.black,.06,.012,.012,.025,.3,.17);k.cyl(TM.red,.008,.008,.35,.18,.47,.05,0,0,1.2);k.cyl(TM.blue,.008,.008,.3,-.15,.47,.05,0,0,-1.1);
+  g.add(k.done(true));const led=glowSprite(0xff3020,.25);led.position.set(.25,.46,.1);g.add(led);g.userData.led=led;return g;}
+let railMeshes=null;
+function updateBombs(dt){const w=stage.clientWidth,h=stage.clientHeight,v=new THREE.Vector3();
+  objects.forEach(o=>{if(o.type!==BOMB)return;o.fuse-=dt;const sec=Math.ceil(o.fuse);if(sec<o.tick||o.tick===1&&o.fuse>14.9){}
+    if(Math.floor(o.fuse*(o.fuse<4?4:1))!==o.lastT){o.lastT=Math.floor(o.fuse*(o.fuse<4?4:1));const [x,y,z]=cellXYZ(o.i),d=Math.hypot(x-player.x,y-player.y,z-player.z);if(d<25)tone(o.fuse<4?1800:1300,.04,.09*(1-d/25),'square');}
+    o.mesh.userData.led.visible=Math.sin(time*(o.fuse<4?24:8))>0;
+    v.copy(o.mesh.position);v.y+=.9;v.project(camera);const show=v.z<1&&Math.hypot(o.mesh.position.x-player.x,o.mesh.position.z-player.z)<30;o.label.style.display=show?'block':'none';
+    if(show){o.label.style.left=((v.x+1)/2*w)+'px';o.label.style.top=((1-v.y)/2*h)+'px';o.label.textContent=`💣 ${Math.max(0,Math.ceil(o.fuse))}`;}
+    if(o.fuse<=0){const [x,y,z]=cellXYZ(o.i);removeObject(o.i);explodeAt(x,y,z,3.6);SFX.boom();setTimeout(()=>SFX.boom(),120);}});}
+function railIndexNear(cx,cz){let best=-1,bd=1e9;for(let i=0;i<RAIL.length;i+=2){const d=Math.hypot(RAIL[i][0]-cx-.5,RAIL[i][1]-cz-.5);if(d<bd){bd=d;best=i;}}return {i:best,d:bd};}
+function trainBlast(cx,cy,cz,R){const T=train;if(!T||cy<RAIL_Y-4||cy>RAIL_Y+6)return;
+  // the cars
+  if(!T.wreck)for(const c of T.cars){const q=c.m.position;if(Math.hypot(q.x-cx-.5,RAIL_Y+1-cy-.5,q.z-cz-.5)<R+2.4){wreckTrain(cx,cz);break;}}
+  // the track
+  const n=railIndexNear(cx,cz);if(n.d<R+.8){const s0=n.i*.25;breakTrack(s0);}}
+function setRailVisible(s0,show){if(!railMeshes)return;const {ties,rails}=railMeshes,m=new THREE.Matrix4(),zero=new THREE.Matrix4().makeScale(0,0,0);T_saved=T_saved||new Map();
+  const near=sv=>{const d=Math.abs(((sv-s0)%RAIL_LEN+RAIL_LEN*1.5)%RAIL_LEN-RAIL_LEN/2);return d<3.2;};
+  for(let n=0;n<ties.count;n++){if(!near(n*3*.25+.125))continue;const key='t'+n;if(!show){if(!T_saved.has(key)){ties.getMatrixAt(n,m);T_saved.set(key,m.clone());}ties.setMatrixAt(n,zero);}else if(T_saved.has(key)){ties.setMatrixAt(n,T_saved.get(key));T_saved.delete(key);}}
+  for(let n=0;n<rails.count;n++){if(!near(Math.floor(n/2)*.25+.125))continue;const key='r'+n;if(!show){if(!T_saved.has(key)){rails.getMatrixAt(n,m);T_saved.set(key,m.clone());}rails.setMatrixAt(n,zero);}else if(T_saved.has(key)){rails.setMatrixAt(n,T_saved.get(key));T_saved.delete(key);}}
+  ties.instanceMatrix.needsUpdate=rails.instanceMatrix.needsUpdate=true;}
+let T_saved=null;
+function breakTrack(s0){const T=train;if(T.broken)setRailVisible(T.broken.s,true);T.broken={s:s0,t:60};setRailVisible(s0,false);
+  if(!T.wreck)setTimeout(()=>{if(!train.wreck)toast('You blew up the railroad track! The train will have to stop. The railroad crew will fix it in a minute.',3800,true);},30);}
+function fixTrack(){const T=train,b=T.broken;if(!b)return;setRailVisible(b.s,true);T.broken=null;
+  for(let k=-14;k<=14;k++){const a=railAt(b.s+k*.25);for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){const x=Math.floor(a.x+dx*.75),z=Math.floor(a.z+dz*.75);if(!inB(x,BASE,z)||Math.hypot(x+.5-a.x,z+.5-a.z)>1.7)continue;
+      for(let y=BASE-2;y<BASE;y++)if(W[idx(x,y,z)]===AIR)setBlockRaw(x,y,z,DIRT);if(W[idx(x,BASE,z)]!==RUBBLE)setBlockRaw(x,BASE,z,RUBBLE);for(let y=BASE+1;y<=BASE+4;y++)if(W[idx(x,y,z)]!==AIR)setBlockRaw(x,y,z,AIR);}}
+  if(Math.hypot(railAt(b.s).x-player.x,railAt(b.s).z-player.z)<60)toast('The railroad crew fixed the track. The train is running again!',2600);}
+function wreckTrain(cx,cz){const T=train;T.wreck={t:45,fires:[]};T.v=0;
+  T.cars.forEach((c,i)=>{const near=Math.hypot(c.m.position.x-cx,c.m.position.z-cz),hit=near<9,side=(i%2?1:-1)*(hit?1:.4);
+    c.wreck={tilt:side*(hit?1.1+Math.random()*.4:.15+Math.random()*.2),shift:side*(hit?1.2+Math.random():.2),spin:(Math.random()-.5)*(hit?.6:.1),drop:hit?.25:0};
+    if(hit){const f=glowSprite(0xff6a20,2.2);f.position.copy(c.m.position);f.position.y+=1.6;scene.add(f);T.wreck.fires.push(f);}});
+  SFX.rumble();shakeT=Math.max(shakeT,1);for(let k=0;k<6;k++)setTimeout(()=>noise(.5,400+k*150,.5,2),k*150);
+  if(onTrain){hopOff();hurt(30,'CRASH! The train got blown up with you on it!');}
+  setTimeout(()=>toast('KA-BOOM! You wrecked the train! The railroad crew will clear the wreck in a while.',4200,true),30);}
+function updateWreck(dt){const T=train,W8=T.wreck;W8.t-=dt;
+  T.cars.forEach(c=>{const a=railAt(T.s+c.off),wk=c.wreck;const fx=Math.cos(a.yaw),fz=-Math.sin(a.yaw);c.m.position.set(a.x+fx*wk.shift,RAIL_Y-wk.drop,a.z+fz*wk.shift);c.m.rotation.set(0,a.yaw+wk.spin,wk.tilt);});
+  W8.fires.forEach(f=>{f.material.opacity=.7+Math.sin(time*13+f.position.x)*.2;});
+  T.puffT-=dt;if(T.puffT<=0){T.puffT=.25;for(const f of W8.fires){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex,transparent:true,depthWrite:false,opacity:.55,color:0x403c38}));sp.position.copy(f.position);sp.scale.setScalar(1);scene.add(sp);T.puffs.push({sp,t:0});}}
+  for(let i=T.puffs.length-1;i>=0;i--){const P=T.puffs[i];P.t+=dt;P.sp.position.y+=dt*(1.4+P.t*.3);P.sp.scale.setScalar(1+P.t*1.6);P.sp.material.opacity=Math.max(0,.55*(1-P.t/3.5));if(P.t>3.5){scene.remove(P.sp);P.sp.material.dispose();T.puffs.splice(i,1);}}
+  if(W8.t<=0){W8.fires.forEach(f=>scene.remove(f));T.wreck=null;T.cars.forEach(c=>{c.wreck=null;c.m.rotation.set(0,c.m.rotation.y,0);});if(T.broken)fixTrack();
+    if(Math.hypot(T.cars[0].m.position.x-player.x,T.cars[0].m.position.z-player.z)<70)toast('The railroad crew cleared the wreck and put the train back on the rails.',3000);}}
 /* ---------- health ---------- */
 let hurtFlash=0,hurtSndT=0;
 function hurt(n,why){player.health-=n;if(why||time-hurtSndT>1){hurtSndT=time;SFX.hurt();hurtFlash=.6;}if(why)toast(why,2600,true);if(player.health<=0)passOut();}
@@ -1312,7 +1363,7 @@ function openPanel(html){if(document.pointerLockElement)document.exitPointerLock
   panel.addEventListener('mousedown',e=>e.stopPropagation());return panel;}
 function closePanel(){if(panel){panel.remove();panel=null;tryLock();}}
 const SHOP=[{sec:'Supplies'},{id:'ladder',name:'Ladder',ds:'Climb up and down shafts. Place it against a wall.',price:2,bulk:5},{id:'timber',name:'Timber set',ds:'Two posts and a cap beam. Holds up the roof across the whole tunnel, up to 5 blocks wide.',price:5,bulk:3},
-  {id:'dyn',name:'Dynamite',ds:'Breaks any rock. 5-second fuse. Leaves bad air behind.',price:6,bulk:3},{sec:'Equipment'},{id:'pump',name:'Steam pump',ds:'Drains groundwater all around it.',price:45},{id:'fan',name:'Ventilation fan',ds:'Blows fresh, cool air into your tunnels.',price:40},{id:'revolver',name:'Box of bullets',ds:'50 cartridges for your revolver (item 9).',price:5},{id:'shells',name:'Box of shotgun shells',ds:'25 shells for your lever-action shotgun (press 9 twice).',price:4},{id:'balls',name:'Musket balls and powder',ds:'20 shots for your musket (press 9 three times).',price:4},{id:'elevator',name:'Mine elevator',ds:'A headframe, hoist and cage. Where you put it, the crew sinks a 60-foot shaft. Ride it with E.',price:500},{id:'cannon',name:'Cannon',ds:'Shoots an iron cannonball that blows up when it hits something. Stand next to it and press E.',price:50},
+  {id:'dyn',name:'Dynamite',ds:'Breaks any rock. 5-second fuse. Leaves bad air behind.',price:6,bulk:3},{sec:'Equipment'},{id:'pump',name:'Steam pump',ds:'Drains groundwater all around it.',price:45},{id:'fan',name:'Ventilation fan',ds:'Blows fresh, cool air into your tunnels.',price:40},{id:'revolver',name:'Box of bullets',ds:'50 cartridges for your revolver (item 9).',price:5},{id:'shells',name:'Box of shotgun shells',ds:'25 shells for your lever-action shotgun (press 9 twice).',price:4},{id:'bomb',name:'Time bomb',ds:'A big bomb with a 15-second clock (press 5 twice). Strong enough to wreck a train.',price:25},{id:'balls',name:'Musket balls and powder',ds:'20 shots for your musket (press 9 three times).',price:4},{id:'elevator',name:'Mine elevator',ds:'A headframe, hoist and cage. Where you put it, the crew sinks a 60-foot shaft. Ride it with E.',price:500},{id:'cannon',name:'Cannon',ds:'Shoots an iron cannonball that blows up when it hits something. Stand next to it and press E.',price:50},
   {id:'drill',name:'Rock drill',ds:'Breaks hard rock and deep quartz, and digs twice as fast.',price:75,own:()=>G.tool==='drill'},{id:'lantern',name:'Big carbide lamp',ds:'Lights up much more of the tunnel.',price:20,own:()=>G.lantern>13},{id:'sacks',name:'More ore sacks',ds:'Carry 16 sacks instead of 8.',price:25,own:()=>G.cap>8}];
 function openStore(msg){const rows=SHOP.map(s=>{if(s.sec)return `<h4>${s.sec}</h4>`;const owned=s.own&&s.own();
     const act=owned?'<span class="ds">Owned</span>':`<span class="price">$${s.price}</span><button class="btn" data-b="${s.id}" data-q="1" ${G.money<s.price?'disabled':''}>Buy</button>${s.bulk?`<button class="ghost" data-b="${s.id}" data-q="${s.bulk}" ${G.money<s.price*s.bulk?'disabled':''}>×${s.bulk}</button>`:''}`;
@@ -1368,7 +1419,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   else digP=Math.max(0,digP-dt*2);
   ring.style.setProperty('--p',(digP*100).toFixed(0)+'%');ring.hidden=digP<=0;
   objects.forEach(o=>{if(o.type!==DYN)return;o.fuse-=dt;if(Math.random()<dt*30)burst(o.mesh.position.x,o.mesh.position.y,o.mesh.position.z,0xffd37a,1,1.5,{life:.3,g:-2});if(o.fuse<=0)explode(o);});
-  updateCannons(dt);updateTrain(dt);updateTown2(dt);updateMiners(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
+  updateCannons(dt);updateBombs(dt);updateTrain(dt);updateTown2(dt);updateMiners(dt);updateBandits(dt);updateSaloon(dt);updateElevs(dt);updateCans(dt);updatePops(dt);updateHorses(dt,mx,mz);objects.forEach(o=>{if(o.type===FAN)o.mesh.userData.hub.rotation.z+=dt*14;if(o.type===PUMP&&o.active)o.mesh.userData.wheel.rotation.x+=dt*8;});
   caveT+=dt;if(caveT>.4){caveCheck(caveT);caveT=0;}
   waterT+=dt;if(waterT>.1){waterTick();waterT=0;}
   wbT+=dt;if(wbT>.25){buildWater();wbT=0;}
@@ -1436,7 +1487,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   renderer.render(scene,camera);requestAnimationFrame(frame);}
 init(true);signs();buildTown();buildSaloon();buildTown2();buildRailroad();setTimeout(()=>spawnMiner([ADIT.x0+6,ADIT.y0,ADIT.z0+1]),0);buildRange();buildHorses();buildDecor();resize();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-window.__ueg={train:()=>train,railAt:s=>railAt(s),get onTrain(){return onTrain;},cans:()=>cans,camera,miners:()=>miners,hurtMiner,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
+window.__ueg={explodeAt,BOMB,railLen:()=>RAIL_LEN,train:()=>train,railAt:s=>railAt(s),get onTrain(){return onTrain;},cans:()=>cans,camera,miners:()=>miners,hurtMiner,spawnMiner,get carrying(){return carrying;},raidIn:s=>{banditT=s;},bandits:()=>bandits,spawnGang,hitBandit,bounties:()=>bounties,decor:()=>decor,falling:()=>falling,town:()=>({hit:townHitT,set:v=>townHitT=v}),rats:()=>rats,feedRat,get player(){return player;},get G(){return G;},W:()=>W,WAT:()=>WAT,idx,setBlock,objects:()=>objects,addObject,stress:()=>stress,start:()=>{started=true;ov.hidden=true;dragLook=true;},airAt,openMill,openStore,keys,save,H:()=>H,breakBlock};
 requestAnimationFrame(frame);
 })();
 </script>

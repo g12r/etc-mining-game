@@ -18,7 +18,7 @@ A guide to `src/game.js` for whoever picks this up. Section names below match th
 - `PLANK`, `LOG`, `ROOF` are building blocks. They are in `NONNET`, meaning they are drawn as crisp boxes and are left out of the smooth rock mesh.
 - `ALLOW` is how far a roof of each material spans from a wall before it starts to fail: 2 in dirt, 3 in rock, 4 in hard rock.
 
-Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6, ELEV 7`. The revolver is not an object: it is held, with its loaded rounds in `G.cyl` and spare bullets in `G.pack.revolver`.
+Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP 3, FAN 4, DYN 5, CANNON 6, ELEV 7, BOMB 8`. Slot 5 holds dynamite or the time bomb (`G.dynMode`). The revolver is not an object: it is held, with its loaded rounds in `G.cyl` and spare bullets in `G.pack.revolver`.
 
 ## Sections of game.js
 
@@ -58,6 +58,7 @@ Placed gear lives in `objects`, not in the block grid: `LADDER 1, TIMBER 2, PUMP
 | miners | `miners` are not saved, and there is only ever one. Old Jim is placed in the adit on load; later ones go where `minerSpot` picks, open tunnel cells about 14 blocks from you. Miners wander between nearby floor cells (`blocksWalk` lets them through timber sets and ladders) and stop near you. `minerHit` and `hurtMiner` take bullets, pellets and blasts; at zero they go to state `ko`, and after a moment the sheriff fines you and they are removed. `updateMiners` drains health (bad air via `airAt`, water, being buried, falling rocks), collapses a miner at 20, and handles `carrying` (slower walking, no horse, E still works the elevator). Reaching open sky with him pays $200. Name tags are DOM elements in `.hud` placed by projecting each head. |
 | the musket | Third gun in slot 9 (`G.gun` cycles revolver, shotgun, musket). `shootMusket` waits 150 ms for the pan flash, then casts one 90-block ray; a bandit takes two hits. `reloadMusket` takes 2.5 s and animates the ramrod (`musReload`). Loaded: `G.mk`; spare: `G.pack.balls`. |
 | railroad | `RAIL` is the track as points 0.25 apart around a rounded rectangle (x 24-118, z 36-122), so `railAt(s)` turns distance along the track into a position and heading. `carveRail` cuts a 3-wide, 4-high bed at ground level (tunnels where a mountain is in the way), lays RUBBLE ballast and fills small gaps beneath; it runs in `freshState`, and once for old saves (`G.rail`). Ties and rails are two instanced meshes. `updateTrain` drives the train (`train.s`, `train.v`), stops at the depot, knocks you off the track, and carries you when `onTrain`. |
+| time bombs and train wrecks | `explodeAt(x,y,z,R)` now takes a radius and calls `trainBlast`. A blast near a car calls `wreckTrain` (`train.wreck`: tilted, shifted cars, fires, 45 s); near the rails it calls `breakTrack` (`train.broken`: the rail and tie instances near it are hidden, the train brakes before it, and `fixTrack` relays the bed after 60 s). Bombs (`updateBombs`) are not saved. |
 | health | Damage from falls, rocks, drowning, bad air and heat; recovery. |
 | store & mill | The General Store sells gear. The Stamp Mill crushes sacks for $1 each and the assayer pays $20 an ounce. |
 | main loop | Per-frame update and draw. |
@@ -83,6 +84,7 @@ Saved to `localStorage` under `ueg-save-v3` (`v:2`: the block grid run-length pa
 - **Space never jumped.** From 0.1 to 0.6 the physics substeps cleared `p.ground` before every vertical move, including moves of zero, so a resting player ended each frame "in the air" and the jump check failed. Now ground is only cleared when there is vertical speed. Stair step-ups, which also check `p.ground`, started working at the same time.
 - **Bullets stopped at timber sets.** A timber set registers every cell of the tunnel cross-section as an object, so shots hit its open middle. `rayFrom(...,shot)` now lets shots through timber sets and ladders.
 - **The page would not start.** The held musket used `TM.brass`, but the hands are built before `TM` exists. Things built near the top of the file must make their own materials.
+- **The hotbar wrapped to two rows.** It is centred with `left:50%`, which limits an absolutely placed box to half the stage; `width:max-content` fixed it.
 - **Floating buildings.** Blasting under the town left it hanging until the support checks were added.
 
 ## When he says it's broken
