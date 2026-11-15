@@ -20,6 +20,7 @@ Play online at https://g12r.github.io/etc-mining-game/, or open `index.html` in 
 | `Q` | Light dynamite where you are looking (or at your feet), then run! You start with 3 sticks. |
 | `1`–`9`, `0` | Choose an item |
 | `E` | Use the store or mill, feed a rat, fire a cannon, get on and off a horse, or work the elevator |
+| `G` `G` | Respawn back at the start |
 | `Esc` | Pause and get your mouse back |
 
 If the mouse will not lock, drag to look and use `F` to dig.
@@ -29,7 +30,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **Cave-ins.** A tunnel roof only holds so far from a wall: about 2 blocks in dirt, 3 in rock, 4 in hard rock. Past that it creaks, dust falls and it comes down. Put in timber sets: two posts and a cap beam across the tunnel.
 - **Groundwater.** Below about 60 feet, water seeps out of the rock and floods your tunnels. You can't breathe underwater. A pump drains everything near it.
 - **Bad air.** Fresh air only reaches about 10 blocks from an opening. Watch your canary: if it stops singing, get out, or set up a fan. Dynamite smoke is bad air too.
-- **Heat.** Rock gets hotter the deeper you go. Past about 95°F your heat bar fills up. A fan blowing cool air keeps you working.
+- **Heat.** Rock gets hotter the deeper you go, and the desert sun is hotter still. Past about 95°F your heat bar fills up. Stand near a fan for a cool breeze.
 - **Hard rock.** Hard rock, and quartz deep down, won't break with a pick. Buy a rock drill or use dynamite.
 
 ## Also in the mine
@@ -50,6 +51,7 @@ If the mouse will not lock, drag to look and use `F` to dig.
 - **The railroad.** A steam train runs a loop around the claim and stops at EMMETT DEPOT by town. Press `E` near it to ride, `E` to hop off. Stay off the tracks!
 - **Time bomb.** Press `5` twice, then `R` to set it. 15 seconds later it goes off, big enough to wreck the train or blow up the track.
 - **Red Rock Canyon.** Press `E` at EMMETT DEPOT to ride the train to a desert canyon world with silver and gold in the cliffs. The sun is hot: drink at the water barrel.
+- **Mine rails and carts.** Press `2` twice for rails and three times for a cart. Lay track with `R`, set the cart on it, and ride with `E`, `W` and `S`. Load ore sacks with `E` and sell the cartload at the stamp mill.
 - **Money and the mill.** Ore sacks aren't gold yet. The stamp mill crushes them for $1 a sack, and the assayer pays $20 an ounce. Deeper quartz holds more gold.
 
 ## Working on the game
