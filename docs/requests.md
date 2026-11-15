@@ -36,6 +36,7 @@ Every request, in his own words, in the order he made them, with what was built.
 | 30 | "add trains" | A railroad loop around the big claim, about 370 blocks long, cut through the hills with timber-portal tunnels under the first mountain (right beside EMMETT No. 1) and the Big Range. A steam train (locomotive with spinning driving wheels, coal tender, two ore cars, red caboose) chuffs and smokes its way around, whistles as it comes into EMMETT DEPOT by town, and waits there 10 seconds. The depot has a platform, a canopy, a bench and luggage, and a water tower stands across the track. Press E near the train to ride in the empty ore car, E to hop off (it hurts a bit at speed). Standing on the track when it comes knocks you aside and costs 25 health. Old saves get the track cut when they load. |
 | 31 | "change the shot gun to lever action" | The shotgun is now a lever-action: the pump grip is gone and a lever loop under the gun swings down and back after every shot. Still 9 shells. |
 | 32 | "make a time bomb that can damage trains" | A time bomb shares slot 5 with dynamite: press 5 again to swap. R sets it on the ground; it ticks for 15 seconds with a countdown over it (faster beeps at the end), and left click defuses it. Its blast is bigger than dynamite's. Near the train it derails it: cars tip over and skid off the rails, burn and smoke, and anyone riding is thrown off and hurt; the railroad crew clears the wreck after 45 seconds. On the track it blows a gap in the rails and the train brakes to a stop before it until the crew fixes the track a minute later. Start with 3; the store sells them for $25. Any blast near the train or track does the same, so dynamite and cannonballs work too. |
+| 33 | "give me a new world" | He picked "Desert canyon world" from four choices. Red Rock Canyon is a second 128 x 128 world reached by train: press E at EMMETT DEPOT and the screen fades while the train chuffs and whistles. A winding canyon with sandstone cliffs, a side canyon, flat-topped mesas and rock buttes; saguaro cactus, rolling tumbleweeds and circling vultures; a hazy desert sky. Silver veins (new) and gold quartz show in the cliff walls; shoot silver to see "4.5 oz silver $5". The sun is 104°F, so the heat bar fills outside: drink at the water barrel at RED ROCK STATION or get underground. The train waits on a siding to take you home. Each world keeps its own digging, gear you placed and save; money and pack travel with you. Bandits ride in the canyon too. |
 
 ## Versions
 
@@ -50,7 +51,8 @@ Rough map of requests to versions. The exact split inside 0.3 was not recorded.
 | 0.5 | 11 to 14 | none kept |
 | 0.6 | 15 to 17 | none kept |
 | 0.7 | 18 to 26 | none kept |
-| 0.8 | 27 onward | `index.html` (current) |
+| 0.8 | 27 to 32 | none kept |
+| 0.9 | 33 onward | `index.html` (current) |
 
 The `history/` pages are in artifact form: they load three.js from the internet, so they need a connection to run.
 

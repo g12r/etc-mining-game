@@ -55,6 +55,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .toast.warn{border-color:var(--warn)}
 .npc{position:absolute;transform:translate(-50%,-100%);font-family:var(--label);font-weight:700;font-size:.95rem;color:var(--fg);text-align:center;text-shadow:0 1px 3px #000;white-space:nowrap;pointer-events:none}
 .npc.down{color:var(--warn)}.npc i{display:block;width:64px;height:6px;margin:2px auto 0;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);border-radius:3px;overflow:hidden}.npc i b{display:block;height:100%}
+.fade{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .8s;pointer-events:none;z-index:6}
 .pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--label);font-weight:700;font-size:1.25rem;color:var(--muted);text-shadow:0 2px 3px #000,0 0 2px #000;white-space:nowrap;pointer-events:none}
 .pop.gold{color:var(--gold);font-size:1.6rem}.pop small{color:var(--ok);font-size:.8em;margin-left:4px}
 .prompt{position:absolute;left:50%;top:calc(50% + 28px);transform:translateX(-50%);background:rgba(12,10,8,.88);border:1px solid var(--lamp);border-radius:6px;padding:3px 12px;white-space:nowrap}
@@ -86,7 +87,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow">Untitled Emmett Game · version 0.8</div>
+      <div class="eyebrow">Untitled Emmett Game · version 0.9</div>
       <h1>Untitled Emmett Game</h1>
       <p>A realistic gold mine. Dig for gold-bearing quartz, crush it at the stamp mill and stay alive: cave-ins, groundwater, bad air, heat and rock too hard for a pick.</p>
     </div>
@@ -111,7 +112,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     </div>
     <div class="overlay" id="startOv">
       <div class="card start">
-        <div class="eyebrow">Version 0.8</div>
+        <div class="eyebrow">Version 0.9</div>
         <h2>Untitled Emmett Game</h2>
         <p class="sub">You're a hard-rock gold miner. The old <b>EMMETT No. 1</b> mine is in the mountain straight ahead. Buy gear at the General Store, follow the quartz, and haul your ore sacks to the Stamp Mill. Turn your sound on.</p>
         <div class="keys">
