@@ -87,6 +87,7 @@ Saved to `localStorage` under `ueg-save-v3` (`v:2`: the block grid run-length pa
 - **Bullets stopped at timber sets.** A timber set registers every cell of the tunnel cross-section as an object, so shots hit its open middle. `rayFrom(...,shot)` now lets shots through timber sets and ladders.
 - **The page would not start.** The held musket used `TM.brass`, but the hands are built before `TM` exists. Things built near the top of the file must make their own materials.
 - **The hotbar wrapped to two rows.** It is centred with `left:50%`, which limits an absolutely placed box to half the stage; `width:max-content` fixed it.
+- **The game froze past the map edge.** `caveCheck` built an `Int16Array` from the area around you clamped to the map; far outside, that size went negative and threw, which stopped the frame loop. Any code that sizes an array or loops over "the area near the player" must handle being off the map. You are also now held inside the claim.
 - **Floating buildings.** Blasting under the town left it hanging until the support checks were added.
 
 ## When he says it's broken

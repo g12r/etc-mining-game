@@ -1031,6 +1031,7 @@ function collapse(i){const [x,y,z]=cellXYZ(i);const t=W[i];if(!t||t===BED)return
 /* ---------- cave-in check (near the miner) ---------- */
 let creakT=-9,shakeT=0,time=0;
 function caveCheck(dt){const px=Math.floor(player.x),pz=Math.floor(player.z),py=Math.floor(player.y);const R=14,x0=Math.max(0,px-R),x1=Math.min(X-1,px+R),z0=Math.max(0,pz-R),z1=Math.min(Z-1,pz+R);
+  if(x1<x0||z1<z0)return;   // off the map: nothing to check (this used to crash the game and freeze it)
   const wdt=x1-x0+1,dep=z1-z0+1;const D=new Int16Array(wdt*dep);const q=[];const unstable=new Map();
   for(let y=Math.max(1,py-10);y<=Math.min(Y-2,py+10);y++){D.fill(-1);q.length=0;let any=false;
     for(let z=z0;z<=z1;z++)for(let x=x0;x<=x1;x++){if(W[idx(x,y,z)]!==AIR||y>H[z*X+x])continue;any=true;const o=objects.get(idx(x,y,z));const li=(z-z0)*wdt+(x-x0);
@@ -1724,6 +1725,8 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;time+=dt;uTi
   const steps=Math.ceil(dt/.01);let landV=0;const wasGround=p.ground;
   for(let s=0;s<steps;s++){moveAxis('x',mx*dt/steps);moveAxis('z',mz*dt/steps);const vy=p.vy;if(vy){p.ground=false;moveAxis('y',vy*dt/steps);if(p.ground&&vy<landV)landV=vy;}}// only lift off the ground when actually moving up or down, or a frame's later steps forget you landed
   {const lv=cageHold(p);if(lv<landV)landV=lv;}
+  // the edge of your claim: you can't wander off the map
+  if(p.x<.4||p.z<.4||p.x>X-.4||p.z>Z-.4){p.x=Math.max(.4,Math.min(X-.4,p.x));p.z=Math.max(.4,Math.min(Z-.4,p.z));if(time-(G.edgeT||-9)>4){G.edgeT=time;toast("That's the edge of your claim. Turn back, partner!",2200);}}
   if(landV<-13&&!bodyWet)hurt(Math.round((-landV-13)*7),'Ouch! That was a long fall. Use ladders!');
   if(p.y<-5){const sp=worldSpawn();p.x=sp.x;p.z=sp.z;p.y=Hc(Math.floor(sp.x),Math.floor(sp.z))+1;}
   if(p.ground&&(mx||mz))bob+=dt*(keys.has('Shift')?13:9);
